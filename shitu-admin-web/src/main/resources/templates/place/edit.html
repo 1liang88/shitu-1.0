@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- 引用布局的head部分 -->
+<head th:replace="~{layout :: head}"></head>
+<body>
+<!-- 引用布局的主体fragment -->
+<div th:replace="~{layout :: layout(title='编辑点位', menu='place', content=~{::content})}"></div>
+
+<!-- 页面具体内容 -->
+<div th:fragment="content">
+    <div class="container-fluid">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-edit me-2"></i>
+                <span th:text="${place.id != null ? '编辑点位' : '新增点位'}"></span>
+            </h2>
+            <a href="/place" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>返回列表
+            </a>
+        </div>
+
+        <!-- 错误提示 -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${error}">错误信息</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- 编辑表单 -->
+        <div class="card">
+            <div class="card-body">
+                <form action="/place/save" method="post" id="placeForm">
+                    <input type="hidden" name="id" th:value="${place.id}">
+
+                    <div class="row mb-3">
+                        <label for="nameInput" class="col-sm-2 col-form-label">点位名称 <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" id="nameInput" name="name"
+                                   th:value="${place.name}" required maxlength="100">
+                        </div>
+                        <label for="categorySelect" class="col-sm-2 col-form-label">所属分类 <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <select class="form-select" id="categorySelect" name="categoryId" required>
+                                <option value="">请选择分类</option>
+                                <option th:each="cat : ${categories}"
+                                        th:value="${cat.id}"
+                                        th:text="${cat.name}"
+                                        th:selected="${place.categoryId == cat.id}">
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label for="addressInput" class="col-sm-2 col-form-label">详细地址 <span class="text-danger">*</span></label>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control" id="addressInput" name="address"
+                                   th:value="${place.address}" required>
+                        </div>
+                        <label for="contactPhoneInput" class="col-sm-2 col-form-label">联系电话</label>
+                        <div class="col-sm-2">
+                            <input type="tel" class="form-control" id="contactPhoneInput" name="contactPhone"
+                                   th:value="${place.contactPhone}" placeholder="13800138000">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label for="longitudeInput" class="col-sm-2 col-form-label">经度</label>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control bg-light" id="longitudeInput"
+                                   name="longitude" th:value="${place.longitude}"
+                                   placeholder="点击获取坐标自动填充" readonly>
+                        </div>
+                        <label for="latitudeInput" class="col-sm-2 col-form-label">纬度</label>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control bg-light" id="latitudeInput"
+                                   name="latitude" th:value="${place.latitude}"
+                                   placeholder="点击获取坐标自动填充" readonly>
+                        </div>
+                        <div class="col-sm-4">
+                            <button type="button" class="btn btn-primary" id="geoBtn">
+                                <i class="fas fa-map-marker-alt"></i> 根据地址获取坐标
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label for="openingHoursInput" class="col-sm-2 col-form-label">开放时间</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" id="openingHoursInput" name="openingHours"
+                                   th:value="${place.openingHours}" placeholder="24小时 或 08:00-20:00">
+                        </div>
+                        <label for="tagsInput" class="col-sm-2 col-form-label">标签</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" id="tagsInput" name="tags"
+                                   th:value="${place.tags}" placeholder="多个标签用逗号分隔">
+                        </div>
+                        <label for="statusSelect" class="col-sm-1 col-form-label">状态</label>
+                        <div class="col-sm-1">
+                            <select class="form-select" id="statusSelect" name="status">
+                                <option value="1" th:selected="${place.status == null or place.status == 1}">发布</option>
+                                <option value="0" th:selected="${place.status == 0}">待审</option>
+                                <option value="2" th:selected="${place.status == 2}">下架</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label for="descriptionInput" class="col-sm-2 col-form-label">描述</label>
+                        <div class="col-sm-10">
+                            <textarea class="form-control" id="descriptionInput" name="description" rows="3"
+                                      th:text="${place.description}" placeholder="请输入点位详细描述（选填）"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-10 offset-sm-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>保存
+                            </button>
+                            <a href="/place" class="btn btn-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        (function() {
+            // 自定义样式补充
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 点位编辑页面专属样式优化 */
+                .col-form-label {
+                    color: #4a5568;
+                    font-weight: 500;
+                    font-size: 14px;
+                    padding-top: calc(0.375rem + 1px);
+                    padding-bottom: calc(0.375rem + 1px);
+                }
+                .form-control, .form-select {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    color: #2d3748;
+                    font-size: 14px;
+                    transition: border-color 0.2s ease;
+                }
+                .form-control:focus, .form-select:focus {
+                    border-color: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.1);
+                    outline: none;
+                }
+                .form-control.bg-light {
+                    background-color: #f7fafc;
+                    cursor: not-allowed;
+                }
+                .form-text {
+                    color: #718096;
+                    font-size: 12px;
+                    margin-top: 4px;
+                }
+                .btn {
+                    border-radius: 6px;
+                    font-size: 14px;
+                    padding: 8px 16px;
+                    border: none;
+                    transition: all 0.2s ease;
+                }
+                .btn-primary {
+                    background-color: #4a5568;
+                }
+                .btn-primary:hover {
+                    background-color: #2d3748;
+                }
+                .btn-secondary {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .btn-secondary:hover {
+                    background-color: #4a5568;
+                    color: #ffffff;
+                }
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    background-color: #ffffff;
+                }
+                .card-body {
+                    padding: 24px;
+                }
+                h2 {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 20px;
+                    margin: 0;
+                }
+                .text-danger {
+                    color: #e53e3e !important;
+                }
+                .ms-2 {
+                    margin-left: 8px !important;
+                }
+                .alert {
+                    border-radius: 8px;
+                    border: 1px solid #feb2b2;
+                    background-color: #fff5f5;
+                    color: #c53030;
+                    padding: 12px 16px;
+                }
+                textarea.form-control {
+                    resize: vertical;
+                    min-height: 80px;
+                }
+                .btn:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 确保 ShituAdmin 存在
+            if (typeof ShituAdmin === 'undefined') {
+                window.ShituAdmin = {
+                    toast: function(message, type) {
+                        // 创建自定义提示框
+                        const toast = document.createElement('div');
+                        toast.className = `position-fixed top-20 start-50 translate-middle-x alert alert-${
+                            type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'
+                        } alert-dismissible fade show`;
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <i class="fas fa-${
+                            type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'
+                        } me-2"></i>
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(toast);
+
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Alert(toast);
+                            bsToast.close();
+                            setTimeout(() => toast.remove(), 500);
+                        }, 3000);
+                    },
+                    confirm: function(message, callback) {
+                        if (confirm(message)) {
+                            callback();
+                        }
+                    }
+                };
+            }
+
+            // 获取坐标按钮点击事件
+            const geoBtn = document.getElementById('geoBtn');
+            if (geoBtn) {
+                geoBtn.addEventListener('click', function() {
+                    const address = document.getElementById('addressInput').value.trim();
+                    if (!address) {
+                        ShituAdmin.toast('请先输入详细地址', 'warning');
+                        return;
+                    }
+
+                    geoBtn.disabled = true;
+                    geoBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> 获取中...';
+
+                    // 调用后端地理编码接口
+                    fetch('/api/geocode/address?address=' + encodeURIComponent(address))
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success && data.data) {
+                                const coords = data.data;
+                                document.getElementById('longitudeInput').value = coords[0];
+                                document.getElementById('latitudeInput').value = coords[1];
+                                ShituAdmin.toast('坐标获取成功', 'success');
+                            } else {
+                                ShituAdmin.toast('获取坐标失败：' + (data.message || '地址解析失败'), 'danger');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('获取坐标出错:', error);
+                            ShituAdmin.toast('请求失败：' + error.message, 'danger');
+                        })
+                        .finally(() => {
+                            geoBtn.disabled = false;
+                            geoBtn.innerHTML = '<i class="fas fa-map-marker-alt me-2"></i> 根据地址获取坐标';
+                        });
+                });
+            }
+
+            // 表单提交前验证
+            const placeForm = document.getElementById('placeForm');
+            if (placeForm) {
+                placeForm.addEventListener('submit', function(e) {
+                    // 基础验证
+                    const name = document.getElementById('nameInput').value.trim();
+                    const categoryId = document.getElementById('categorySelect').value;
+                    const address = document.getElementById('addressInput').value.trim();
+
+                    if (!name) {
+                        ShituAdmin.toast('点位名称不能为空', 'warning');
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    if (!categoryId) {
+                        ShituAdmin.toast('请选择所属分类', 'warning');
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    if (!address) {
+                        ShituAdmin.toast('详细地址不能为空', 'warning');
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    // 坐标验证（提示性，非强制）
+                    const lng = document.getElementById('longitudeInput').value.trim();
+                    const lat = document.getElementById('latitudeInput').value.trim();
+
+                    if (address && (!lng || !lat)) {
+                        ShituAdmin.confirm(
+                            '地址已填写但未获取坐标，确定继续保存吗？\n\n提示：没有坐标的点位将无法在地图上显示。',
+                            function() {
+                                // 用户确认，继续提交
+                                return true;
+                            },
+                            function() {
+                                // 用户取消
+                                e.preventDefault();
+                                return false;
+                            }
+                        );
+                    }
+                    return true;
+                });
+            }
+
+            // 检查已有坐标并给出提示
+            const lngValue = document.getElementById('longitudeInput').value;
+            const latValue = document.getElementById('latitudeInput').value;
+            if (lngValue && latValue) {
+                console.log('当前点位已有坐标：', lngValue, latValue);
+            }
+        })();
+    </script>
+</div>
+</body>
+</html>

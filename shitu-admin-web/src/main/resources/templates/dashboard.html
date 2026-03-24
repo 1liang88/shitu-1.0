@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仪表盘 - 识途管理后台</title>
+  <!-- Bootstrap 5 CSS - 使用 BootCDN -->
+  <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome 6 - 使用 BootCDN -->
+  <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+
+  <!-- 自定义样式 - 中性浅色风格，与后台统一 -->
+  <style>
+    /* 全局样式 */
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      background-color: #f9f9f9; /* 柔和浅灰背景，替代原蓝色调 */
+      padding-top: 60px;
+      padding-left: 250px;
+      color: #333; /* 正文深灰，更护眼 */
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* 侧边栏 - 纯中性灰系，移除渐变 */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 60px;
+      bottom: 0;
+      width: 250px;
+      background-color: #2d3748; /* 中性深灰，无渐变 */
+      color: #e2e8f0; /* 浅灰文字 */
+      overflow-y: auto;
+      z-index: 100;
+      border-right: 1px solid #e2e8f0;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+    }
+
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+
+    .menu-item {
+      display: block;
+      padding: 12px 25px;
+      color: #a0aec0; /* 次级文字色 */
+      text-decoration: none;
+      transition: all 0.2s ease;
+      position: relative;
+      font-size: 14px;
+    }
+
+    .menu-item:hover {
+      background-color: #4a5568; /* hover浅灰 */
+      color: #ffffff;
+      padding-left: 30px;
+      font-weight: 500;
+    }
+
+    .menu-item.active {
+      background-color: #4a5568; /* 选中态纯色 */
+      color: #ffffff;
+      border-left: 4px solid #718096; /* 中性灰边框 */
+      font-weight: 600;
+    }
+
+    .menu-item i {
+      width: 22px;
+      font-size: 16px;
+      margin-right: 8px;
+    }
+
+    .menu-item .badge {
+      position: absolute;
+      right: 20px;
+      top: 12px;
+      background-color: #e53e3e;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    /* 主内容区 */
+    .main-content {
+      padding: 25px;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* 统计卡片 - 轻量化设计，无渐变 */
+    .stat-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      background-color: #ffffff;
+      color: #2d3748 !important; /* 统一文字色 */
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px); /* 柔和悬浮效果 */
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08); /* 轻微阴影 */
+    }
+
+    .stat-card .card-body {
+      padding: 20px;
+    }
+
+    /* 顶部导航栏 - 中性灰系 */
+    .navbar {
+      z-index: 1030;
+    }
+
+    .navbar-dark.bg-primary {
+      background-color: #2d3748 !important; /* 与侧边栏统一深灰 */
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .navbar-brand {
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+
+    /* 表格/卡片通用样式 */
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: none;
+      background-color: #ffffff;
+    }
+
+    .card-header {
+      background-color: #f7fafc; /* 浅灰表头 */
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 20px;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .card-title {
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 0;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    /* 页面标题区域 */
+    .d-flex.justify-content-between h2 {
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .text-muted {
+      color: #718096 !important;
+      font-size: 14px;
+    }
+
+    /* 响应式优化 */
+    @media (max-width: 768px) {
+      body {
+        padding-left: 0;
+      }
+      .sidebar {
+        left: -250px;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      }
+      .sidebar.show {
+        left: 0;
+      }
+      .main-content {
+        padding: 15px;
+      }
+      .stat-card {
+        margin-bottom: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+<!-- 顶部导航栏 -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/dashboard">
+      <i class="fas fa-map-signal me-2"></i>
+      识途管理后台
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+            onclick="$('.sidebar').toggleClass('show')">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+            <i class="fas fa-user-circle me-1"></i>
+            <span th:text="${session.adminName ?: '管理员'}">管理员</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- 侧边栏 -->
+<div class="sidebar">
+  <div class="sidebar-menu">
+    <a href="/dashboard" class="menu-item active">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>仪表盘</span>
+    </a>
+    <a href="/place" class="menu-item">
+      <i class="fas fa-map-marker-alt"></i>
+      <span>点位管理</span>
+    </a>
+    <a href="/category" class="menu-item">
+      <i class="fas fa-tags"></i>
+      <span>分类管理</span>
+    </a>
+    <a href="/report" class="menu-item">
+      <i class="fas fa-flag"></i>
+      <span>上报审核</span>
+      <span class="badge bg-danger" id="pendingCount" style="display: none;">0</span>
+    </a>
+    <a href="/admin" class="menu-item">
+      <i class="fas fa-users-cog"></i>
+      <span>管理员管理</span>
+    </a>
+  </div>
+</div>
+
+<!-- 主内容区 -->
+<div class="main-content">
+  <div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-tachometer-alt me-2"></i>仪表盘</h2>
+      <div>
+        <span class="text-muted">最后更新：</span>
+        <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm')}"></span>
+      </div>
+    </div>
+
+    <!-- 统计卡片 - 改用中性色，移除彩色背景 -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title text-muted">总点位</h6>
+                <h2 class="mb-0 text-dark" id="totalPlaces">0</h2>
+              </div>
+              <i class="fas fa-map-marker-alt fa-3x text-secondary opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title text-muted">总上报</h6>
+                <h2 class="mb-0 text-dark" id="totalReports">0</h2>
+              </div>
+              <i class="fas fa-flag fa-3x text-secondary opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title text-muted">待审核</h6>
+                <h2 class="mb-0 text-dark" id="pendingReports">0</h2>
+              </div>
+              <i class="fas fa-clock fa-3x text-secondary opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="card-title text-muted">分类数</h6>
+                <h2 class="mb-0 text-dark" id="totalCategories">0</h2>
+              </div>
+              <i class="fas fa-tags fa-3x text-secondary opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">点位分类统计</h5>
+          </div>
+          <div class="card-body">
+            <div id="categoryChart" style="height: 350px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">上报类型统计</h5>
+          </div>
+          <div class="card-body">
+            <div id="reportTypeChart" style="height: 350px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 热门区域 -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">热门区域 TOP10</h5>
+          </div>
+          <div class="card-body">
+            <div id="hotAreaChart" style="height: 400px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript - 全部使用国内CDN -->
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<script>
+  $(function() {
+    // 加载待处理数量
+    $.get('/api/report/pending/count', function(res) {
+      if (res && res.success && res.data > 0) {
+        $('#pendingCount').text(res.data).show();
+      }
+    }).fail(function() {
+      console.log('获取待审核数量失败');
+    });
+
+    // 加载统计数据
+    $.get('/api/dashboard/stats', function(res) {
+      if (res && res.success) {
+        $('#totalPlaces').text(res.data.totalPlaces || 0);
+        $('#totalReports').text(res.data.totalReports || 0);
+        $('#pendingReports').text(res.data.reportPending || 0);
+        $('#totalCategories').text(res.data.totalCategories || 0);
+
+        if (res.data.placeByCategory && res.data.placeByCategory.length > 0) {
+          initCategoryChart(res.data.placeByCategory);
+        } else {
+          // 模拟数据
+          initCategoryChart([
+            { categoryName: '公厕', count: 45 },
+            { categoryName: '充电桩', count: 32 },
+            { categoryName: '饮水点', count: 28 },
+            { categoryName: '无障碍设施', count: 19 },
+            { categoryName: '自助机', count: 15 }
+          ]);
+        }
+
+        if (res.data.reportByType && res.data.reportByType.length > 0) {
+          initReportTypeChart(res.data.reportByType);
+        } else {
+          // 模拟数据
+          initReportTypeChart([
+            { typeName: '新增', count: 45 },
+            { typeName: '纠错', count: 32 },
+            { typeName: '反馈', count: 28 }
+          ]);
+        }
+      }
+    }).fail(function() {
+      // API调用失败时使用模拟数据
+      $('#totalPlaces').text(139);
+      $('#totalReports').text(45);
+      $('#pendingReports').text(12);
+      $('#totalCategories').text(5);
+
+      initCategoryChart([
+        { categoryName: '公厕', count: 45 },
+        { categoryName: '充电桩', count: 32 },
+        { categoryName: '饮水点', count: 28 },
+        { categoryName: '无障碍设施', count: 19 },
+        { categoryName: '自助机', count: 15 }
+      ]);
+
+      initReportTypeChart([
+        { typeName: '新增', count: 25 },
+        { typeName: '纠错', count: 12 },
+        { typeName: '反馈', count: 8 }
+      ]);
+    });
+
+    // 加载热门区域
+    $.get('/api/dashboard/hot-areas', function(res) {
+      if (res && res.success && res.data && res.data.length > 0) {
+        initHotAreaChart(res.data);
+      } else {
+        initHotAreaChart([
+          { areaName: '朝阳区', count: 45 },
+          { areaName: '海淀区', count: 38 },
+          { areaName: '东城区', count: 32 },
+          { areaName: '西城区', count: 28 },
+          { areaName: '丰台区', count: 24 }
+        ]);
+      }
+    }).fail(function() {
+      initHotAreaChart([
+        { areaName: '朝阳区', count: 45 },
+        { areaName: '海淀区', count: 38 },
+        { areaName: '东城区', count: 32 },
+        { areaName: '西城区', count: 28 },
+        { areaName: '丰台区', count: 24 }
+      ]);
+    });
+
+    // 初始化点位分类图表（中性色系）
+    function initCategoryChart(data) {
+      var chart = echarts.init(document.getElementById('categoryChart'));
+      chart.setOption({
+        color: ['#4a5568', '#718096', '#a0aec0', '#cbd5e0', '#e2e8f0'], // 中性灰系配色
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c} ({d}%)',
+          textStyle: { fontSize: 12 }
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left',
+          textStyle: { fontSize: 12, color: '#4a5568' }
+        },
+        series: [{
+          name: '点位数量',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 8,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: {
+            show: false
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '14',
+              fontWeight: 'bold',
+              color: '#2d3748'
+            }
+          },
+          data: data.map(item => ({
+            name: item.categoryName || item.name,
+            value: item.count || item.value
+          }))
+        }]
+      });
+
+      $(window).resize(function() { chart.resize(); });
+    }
+
+    // 初始化上报类型图表（中性色系）
+    function initReportTypeChart(data) {
+      var chart = echarts.init(document.getElementById('reportTypeChart'));
+      chart.setOption({
+        color: ['#4a5568', '#718096', '#a0aec0'], // 中性灰系配色
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c} ({d}%)',
+          textStyle: { fontSize: 12 }
+        },
+        legend: {
+          orient: 'vertical',
+          left: 'left',
+          textStyle: { fontSize: 12, color: '#4a5568' }
+        },
+        series: [{
+          name: '上报类型',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 8,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: {
+            show: false
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '14',
+              fontWeight: 'bold',
+              color: '#2d3748'
+            }
+          },
+          data: data.map(item => ({
+            name: item.typeName || item.name,
+            value: item.count || item.value
+          }))
+        }]
+      });
+
+      $(window).resize(function() { chart.resize(); });
+    }
+
+    // 初始化热门区域图表（中性色系）
+    function initHotAreaChart(data) {
+      var chart = echarts.init(document.getElementById('hotAreaChart'));
+      chart.setOption({
+        color: ['#4a5568'], // 中性深灰
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          textStyle: { fontSize: 12 }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'value',
+          axisLabel: { fontSize: 12, color: '#4a5568' },
+          axisLine: { lineStyle: { color: '#e2e8f0' } }
+        },
+        yAxis: {
+          type: 'category',
+          data: data.map(item => item.areaName || item.name),
+          axisLabel: { fontSize: 12, color: '#4a5568' },
+          axisLine: { lineStyle: { color: '#e2e8f0' } }
+        },
+        series: [{
+          name: '点位数量',
+          type: 'bar',
+          data: data.map(item => item.count || item.value),
+          itemStyle: {
+            borderRadius: 4
+          },
+          label: {
+            show: true,
+            position: 'right',
+            fontSize: 12,
+            color: '#2d3748'
+          }
+        }]
+      });
+
+      $(window).resize(function() { chart.resize(); });
+    }
+
+    // 移动端侧边栏点击空白处关闭
+    $(document).click(function(e) {
+      if ($(window).width() < 768 &&
+              !$(e.target).closest('.sidebar').length &&
+              !$(e.target).closest('.navbar-toggler').length &&
+              $('.sidebar').hasClass('show')) {
+        $('.sidebar').removeClass('show');
+      }
+    });
+  });
+</script>
+</body>
+</html>

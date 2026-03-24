@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.liang.shituapi.dao.ReportMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.liang.shitucommon.entity.Report">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="place_name" property="placeName" jdbcType="VARCHAR"/>
+        <result column="category_id" property="categoryId" jdbcType="INTEGER"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="longitude" property="longitude" jdbcType="DECIMAL"/>
+        <result column="latitude" property="latitude" jdbcType="DECIMAL"/>
+        <result column="contact_info" property="contactInfo" jdbcType="VARCHAR"/>
+        <result column="report_type" property="reportType" jdbcType="TINYINT"/>
+        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="images" property="images" jdbcType="VARCHAR"/>
+        <result column="reporter_name" property="reporterName" jdbcType="VARCHAR"/>
+        <result column="reporter_phone" property="reporterPhone" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="audit_remark" property="auditRemark" jdbcType="VARCHAR"/>
+        <result column="audit_time" property="auditTime" jdbcType="TIMESTAMP"/>
+        <result column="audit_by" property="auditBy" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <!-- 关联字段 -->
+        <association property="categoryName" javaType="string" column="category_id"
+                     select="com.liang.shituapi.dao.CategoryMapper.selectById" fetchType="lazy"/>
+        <association property="auditByName" javaType="string" column="audit_by"
+                     select="com.liang.shituapi.dao.AdminMapper.selectById" fetchType="lazy"/>
+    </resultMap>
+
+    <!-- 带关联信息的结果映射 -->
+    <resultMap id="WithRelationResultMap" type="com.liang.shitucommon.entity.Report" extends="BaseResultMap">
+        <result column="category_name" property="categoryName" jdbcType="VARCHAR"/>
+        <result column="audit_by_name" property="auditByName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="BaseColumns">
+        r.id, r.place_name, r.category_id, r.address, r.longitude, r.latitude,
+        r.contact_info, r.report_type, r.content, r.images,
+        r.reporter_name, r.reporter_phone, r.status,
+        r.audit_remark, r.audit_time, r.audit_by, r.create_time
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="WithRelationResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name,
+        a.real_name as audit_by_name
+        FROM report r
+        LEFT JOIN category c ON r.category_id = c.id
+        LEFT JOIN admin a ON r.audit_by = a.id
+        WHERE r.id = #{id}
+    </select>
+
+    <!-- 查询所有 -->
+    <select id="selectAll" resultMap="WithRelationResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name,
+        a.real_name as audit_by_name
+        FROM report r
+        LEFT JOIN category c ON r.category_id = c.id
+        LEFT JOIN admin a ON r.audit_by = a.id
+        ORDER BY r.id DESC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectPage" resultMap="WithRelationResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name,
+        a.real_name as audit_by_name
+        FROM report r
+        LEFT JOIN category c ON r.category_id = c.id
+        LEFT JOIN admin a ON r.audit_by = a.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.place_name LIKE CONCAT('%', #{keyword}, '%')
+                OR r.address LIKE CONCAT('%', #{keyword}, '%')
+                OR r.reporter_name LIKE CONCAT('%', #{keyword}, '%')
+                OR r.reporter_phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND r.category_id = #{categoryId}
+            </if>
+            <if test="reportType != null">
+                AND r.report_type = #{reportType}
+            </if>
+            <if test="status != null">
+                AND r.status = #{status}
+            </if>
+        </where>
+        ORDER BY r.id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM report r
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (r.place_name LIKE CONCAT('%', #{keyword}, '%')
+                OR r.address LIKE CONCAT('%', #{keyword}, '%')
+                OR r.reporter_name LIKE CONCAT('%', #{keyword}, '%')
+                OR r.reporter_phone LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND r.category_id = #{categoryId}
+            </if>
+            <if test="reportType != null">
+                AND r.report_type = #{reportType}
+            </if>
+            <if test="status != null">
+                AND r.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO report (
+            place_name, category_id, address, longitude, latitude, contact_info,
+            report_type, content, images, reporter_name, reporter_phone,
+            status, create_time
+        ) VALUES (
+                     #{placeName}, #{categoryId}, #{address}, #{longitude}, #{latitude}, #{contactInfo},
+                     #{reportType}, #{content}, #{images}, #{reporterName}, #{reporterPhone},
+                     0, NOW()
+                 )
+    </insert>
+
+    <!-- 批量插入 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO report (
+        place_name, category_id, address, longitude, latitude, contact_info,
+        report_type, content, images, reporter_name, reporter_phone,
+        status, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.placeName}, #{item.categoryId}, #{item.address},
+            #{item.longitude}, #{item.latitude}, #{item.contactInfo},
+            #{item.reportType}, #{item.content}, #{item.images},
+            #{item.reporterName}, #{item.reporterPhone},
+            0, NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据ID更新 -->
+    <update id="updateById">
+        UPDATE report
+        <set>
+            <if test="placeName != null">place_name = #{placeName},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="contactInfo != null">contact_info = #{contactInfo},</if>
+            <if test="reportType != null">report_type = #{reportType},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="reporterName != null">reporter_name = #{reporterName},</if>
+            <if test="reporterPhone != null">reporter_phone = #{reporterPhone}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 审核上报 -->
+    <update id="audit">
+        UPDATE report
+        SET status = #{status},
+            audit_remark = #{auditRemark},
+            audit_by = #{auditBy},
+            audit_time = #{auditTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量审核 -->
+    <update id="batchAudit">
+        UPDATE report
+        SET status = #{status},
+        audit_remark = #{auditRemark},
+        audit_by = #{auditBy},
+        audit_time = #{auditTime}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM report WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="batchDeleteByIds">
+        DELETE FROM report WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据状态统计数量 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM report
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据类型统计数量 -->
+    <select id="countByType" resultType="com.liang.shituapi.dao.ReportMapper$TypeStat">
+        SELECT
+            report_type as reportType,
+            CASE
+                WHEN report_type = 1 THEN '新增'
+                WHEN report_type = 2 THEN '纠错'
+                WHEN report_type = 3 THEN '反馈'
+                ELSE '其他'
+                END as typeName,
+            COUNT(*) as count
+        FROM report
+        GROUP BY report_type
+        ORDER BY report_type
+    </select>
+    <!-- 根据手机号查询 -->
+    <select id="selectByReporterPhone" resultMap="WithRelationResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name,
+        a.real_name as audit_by_name
+        FROM report r
+        LEFT JOIN category c ON r.category_id = c.id
+        LEFT JOIN admin a ON r.audit_by = a.id
+        WHERE r.reporter_phone = #{reporterPhone}
+        ORDER BY r.id DESC
+    </select>
+
+    <!-- 今日新增数量 -->
+    <select id="countToday" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM report
+        WHERE DATE(create_time) = CURDATE()
+    </select>
+
+    <!-- 本周新增数量 -->
+    <select id="countThisWeek" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM report
+        WHERE YEARWEEK(create_time, 1) = YEARWEEK(CURDATE(), 1)
+    </select>
+
+    <!-- 本月新增数量 -->
+    <select id="countThisMonth" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM report
+        WHERE YEAR(create_time) = YEAR(CURDATE())
+          AND MONTH(create_time) = MONTH(CURDATE())
+    </select>
+
+</mapper>
