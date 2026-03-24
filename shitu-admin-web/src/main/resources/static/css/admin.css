@@ -1,0 +1,241 @@
+/* 全局样式 - 中性色优化（增强可读性和呼吸感） */
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background-color: #f9f9f9; /* 更柔和的浅灰 */
+    padding-top: 60px;
+    padding-left: 250px;
+    color: #333; /* 正文统一深灰，替代纯黑更护眼 */
+    line-height: 1.6; /* 增加行高提升可读性 */
+    margin: 0; /* 重置默认边距 */
+}
+
+/* 侧边栏 - 纯中性灰系，优化层次感和交互 */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 60px;
+    bottom: 0;
+    width: 250px;
+    background-color: #2d3748; /* 深灰蓝替换为纯深灰，保持中性 */
+    color: #e2e8f0; /* 浅灰文字 */
+    overflow-y: auto;
+    z-index: 100;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.05); /* 轻微阴影增强层次感 */
+}
+
+.sidebar-menu {
+    padding: 20px 0;
+}
+
+.menu-item {
+    display: block;
+    padding: 12px 25px;
+    color: #a0aec0; /* 次级文字色 */
+    text-decoration: none;
+    transition: all 0.2s ease; /* 缩短过渡时间更丝滑 */
+    position: relative;
+    font-size: 14px; /* 统一字号 */
+}
+
+.menu-item:hover {
+    background-color: #4a5568; /* hover浅灰，无透明渐变 */
+    color: #ffffff;
+    padding-left: 30px;
+    font-weight: 500; /* hover轻微加粗 */
+}
+
+.menu-item.active {
+    background-color: #4a5568; /* 选中态纯色，无渐变 */
+    color: #ffffff;
+    border-left: 4px solid #718096; /* 纯中性灰边框，无蓝色 */
+    font-weight: 600; /* 选中态加粗 */
+}
+
+.menu-item i {
+    width: 22px; /* 微调图标宽度更均衡 */
+    font-size: 16px; /* 统一图标大小 */
+    margin-right: 8px; /* 增加图标与文字间距 */
+}
+
+.menu-item .badge {
+    position: absolute;
+    right: 20px;
+    top: 12px;
+    background-color: #e53e3e; /* 仅提示角标保留红色（功能性强调） */
+    font-size: 11px; /* 缩小角标字号更精致 */
+    padding: 2px 6px; /* 优化角标内边距 */
+    border-radius: 10px; /* 圆角更圆润 */
+}
+
+/* 主内容区 */
+.main-content {
+    padding: 25px;
+    min-height: calc(100vh - 60px);
+}
+
+/* 统计卡片 - 轻量化，无阴影渐变 */
+.stat-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px; /* 圆角更克制 */
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+    margin-bottom: 20px; /* 增加卡片间距 */
+}
+
+.stat-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 轻微阴影，不夸张 */
+    transform: translateY(-1px); /* hover动效更柔和 */
+    border-color: #d1d5db; /* hover轻微加深边框 */
+}
+
+.stat-card .card-body {
+    padding: 20px;
+}
+
+/* 表格样式 - 纯中性色优化 */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #ffffff; /* 表格背景纯白 */
+    border-radius: 8px; /* 表格整体圆角 */
+    overflow: hidden; /* 裁剪圆角溢出 */
+}
+
+.table th {
+    background-color: #f7fafc; /* 浅灰表头 */
+    border-bottom: 2px solid #e2e8f0;
+    color: #2d3748;
+    font-weight: 600;
+    padding: 12px 15px; /* 优化单元格内边距 */
+}
+
+.table td {
+    border-bottom: 1px solid #e2e8f0;
+    color: #4a5568;
+    padding: 12px 15px; /* 优化单元格内边距 */
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f7fafc; /* 中性hover色 */
+}
+
+/* 按钮样式 - 纯中性色替代蓝色/渐变 */
+.btn {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    padding: 6px 12px; /* 统一按钮内边距 */
+    font-size: 14px; /* 统一按钮字号 */
+    border: none;
+}
+
+.btn-action {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin: 0 2px;
+}
+
+/* 主按钮改用中性深灰，无蓝色 */
+.btn-primary {
+    background-color: #4a5568; /* 中性深灰替代蓝色 */
+}
+
+.btn-primary:hover {
+    background-color: #2d3748; /* hover加深深灰 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* 轻微阴影增强交互 */
+}
+
+.btn-success {
+    background-color: #48bb78; /* 中性绿（保留功能性） */
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #38a169;
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.2);
+}
+
+.btn-danger {
+    background-color: #e53e3e; /* 中性红（保留功能性） */
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #c53030;
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.2);
+}
+
+/* 模态框 - 纯中性色优化 */
+.modal-content {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: none; /* 去掉边框更简洁 */
+}
+
+.modal-header {
+    background-color: #f7fafc; /* 中性表头 */
+    color: #2d3748;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 8px 8px 0 0;
+    padding: 15px 20px; /* 优化内边距 */
+}
+
+.modal-header .btn-close {
+    filter: none; /* 去掉反色，用默认样式 */
+    opacity: 0.7;
+    margin: -15px -20px -15px auto; /* 调整关闭按钮位置 */
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 20px; /* 优化模态框内容内边距 */
+}
+
+/* 分页 - 纯中性色优化（无蓝色） */
+.pagination .page-link {
+    color: #4a5568; /* 中性灰文字替代蓝色 */
+    border: 1px solid #e2e8f0;
+    margin: 0 2px;
+    border-radius: 6px;
+    padding: 6px 12px; /* 优化分页按钮内边距 */
+}
+
+.pagination .page-link:hover {
+    background-color: #f7fafc;
+    border-color: #4a5568; /* 中性灰边框替代蓝色 */
+    color: #2d3748;
+}
+
+.pagination .active .page-link {
+    background-color: #4a5568; /* 中性深灰背景替代蓝色 */
+    border-color: #4a5568;
+    color: #ffffff;
+}
+
+/* 顶部导航栏 - 纯中性色（与侧边栏统一） */
+.navbar-dark.bg-primary {
+    background-color: #2d3748 !important; /* 深灰，无蓝色 */
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05); /* 轻微阴影增强层次感 */
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    body {
+        padding-left: 0;
+    }
+    .sidebar {
+        left: -250px;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1); /* 移动端增加阴影 */
+    }
+    .sidebar.show {
+        left: 0;
+    }
+    .main-content {
+        padding: 15px; /* 移动端减小内边距 */
+    }
+}

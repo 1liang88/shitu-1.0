@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head}"></head>
+<body>
+<div th:replace="~{layout :: layout(title='编辑管理员', menu='admin', content=~{::content})}"></div>
+<div th:fragment="content">
+    <meta charset="UTF-8">
+    <div class="container-fluid">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-edit me-2"></i>
+                <span th:text="${admin.id != null ? '编辑管理员' : '新增管理员'}"></span>
+            </h2>
+            <a href="/admin" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>返回列表
+            </a>
+        </div>
+
+        <!-- 如果是自己，显示警告 -->
+        <div th:if="${isSelf}" class="alert alert-warning mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            您正在编辑自己的账号，请谨慎操作。
+        </div>
+
+        <!-- 编辑表单 -->
+        <div class="card">
+            <div class="card-body">
+                <form action="/admin/save" method="post" id="adminForm">
+                    <input type="hidden" name="id" th:value="${admin.id}">
+
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">用户名 <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" name="username"
+                                   th:value="${admin.username}" required maxlength="50"
+                                   th:readonly="${isSelf}">
+                        </div>
+                        <label class="col-sm-2 col-form-label">姓名</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" name="realName"
+                                   th:value="${admin.realName}" maxlength="50">
+                        </div>
+                    </div>
+
+                    <div th:if="${admin.id == null}" class="row mb-3">
+                        <label class="col-sm-2 col-form-label">密码</label>
+                        <div class="col-sm-4">
+                            <input type="password" class="form-control" name="password"
+                                   placeholder="不填则默认为123456">
+                            <div class="form-text">默认为123456</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3" th:unless="${isSelf}">
+                        <label class="col-sm-2 col-form-label">角色</label>
+                        <div class="col-sm-4">
+                            <select class="form-select" name="role">
+                                <option value="admin" th:selected="${admin.role == null or admin.role == 'admin'}">普通管理员</option>
+                                <option value="super_admin" th:selected="${admin.role == 'super_admin'}">超级管理员</option>
+                            </select>
+                        </div>
+                        <label class="col-sm-2 col-form-label">状态</label>
+                        <div class="col-sm-4">
+                            <select class="form-select" name="status">
+                                <option value="1" th:selected="${admin.status == null or admin.status == 1}">启用</option>
+                                <option value="0" th:selected="${admin.status == 0}">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div th:if="${isSelf}" class="row mb-3">
+                        <div class="col-sm-10 offset-sm-2">
+                            <a href="#" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePwdModal">
+                                <i class="fas fa-key me-2"></i>修改密码
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-10 offset-sm-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>保存
+                            </button>
+                            <a href="/admin" class="btn btn-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div class="modal fade" id="changePwdModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-sm">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title text-dark">修改密码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label class="form-label">原密码</label>
+                        <input type="password" class="form-control" id="oldPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                        <div class="form-text text-muted mt-1">密码长度不少于6位</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmChangePwd">确认修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function() {
+            // 自定义样式补充
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 表单页面专属样式优化 */
+                .col-form-label {
+                    color: #4a5568;
+                    font-weight: 500;
+                    font-size: 14px;
+                    padding-top: calc(0.375rem + 1px);
+                    padding-bottom: calc(0.375rem + 1px);
+                }
+                .form-control, .form-select {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    color: #2d3748;
+                    font-size: 14px;
+                    transition: border-color 0.2s ease;
+                }
+                .form-control:focus, .form-select:focus {
+                    border-color: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.1);
+                    outline: none;
+                }
+                .form-control[readonly] {
+                    background-color: #f7fafc;
+                    cursor: not-allowed;
+                }
+                .form-text {
+                    color: #718096;
+                    font-size: 12px;
+                    margin-top: 4px;
+                }
+                .btn {
+                    border-radius: 6px;
+                    font-size: 14px;
+                    padding: 8px 16px;
+                    border: none;
+                    transition: all 0.2s ease;
+                }
+                .btn-primary {
+                    background-color: #4a5568;
+                }
+                .btn-primary:hover {
+                    background-color: #2d3748;
+                }
+                .btn-secondary {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .btn-secondary:hover {
+                    background-color: #4a5568;
+                    color: #ffffff;
+                }
+                .btn-outline-secondary {
+                    border: 1px solid #718096;
+                    color: #4a5568;
+                    background-color: transparent;
+                }
+                .btn-outline-secondary:hover {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    background-color: #ffffff;
+                }
+                .card-body {
+                    padding: 24px;
+                }
+                .alert-warning {
+                    border-radius: 8px;
+                    border: 1px solid #fcd34d;
+                    background-color: #fef3c7;
+                    color: #92400e;
+                    padding: 12px 16px;
+                }
+                .modal-content {
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                }
+                .modal-header {
+                    background-color: #f7fafc;
+                    border-bottom: 1px solid #e2e8f0;
+                    border-radius: 8px 8px 0 0;
+                    padding: 12px 20px;
+                }
+                .modal-title {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 16px;
+                }
+                .modal-body {
+                    padding: 20px;
+                    color: #4a5568;
+                }
+                .modal-footer {
+                    border-top: 1px solid #e2e8f0;
+                    padding: 12px 20px;
+                }
+                h2 {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 20px;
+                    margin: 0;
+                }
+                .text-danger {
+                    color: #e53e3e !important;
+                }
+                .ms-2 {
+                    margin-left: 8px !important;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 确保 ShituAdmin 存在
+            if (typeof ShituAdmin === 'undefined') {
+                window.ShituAdmin = {
+                    toast: function(message, type) {
+                        // 创建自定义提示框
+                        const toast = document.createElement('div');
+                        toast.className = `position-fixed top-20 start-50 translate-middle-x alert alert-${
+                            type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'
+                        } alert-dismissible fade show`;
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <i class="fas fa-${
+                            type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'
+                        } me-2"></i>
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(toast);
+
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Alert(toast);
+                            bsToast.close();
+                            setTimeout(() => toast.remove(), 500);
+                        }, 3000);
+                    }
+                };
+            }
+
+            // 表单提交验证
+            $('#adminForm').submit(function(e) {
+                const username = $('input[name="username"]').val().trim();
+                if (!username) {
+                    ShituAdmin.toast('用户名不能为空', 'warning');
+                    e.preventDefault();
+                    return false;
+                }
+
+                // 新增时密码验证
+                if ($('input[name="id"]').val() === '' && $('input[name="password"]').val()) {
+                    const password = $('input[name="password"]').val();
+                    if (password.length < 6) {
+                        ShituAdmin.toast('密码长度不能少于6位', 'warning');
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+
+            // 修改密码
+            $('#confirmChangePwd').click(function() {
+                var oldPwd = $('#oldPassword').val().trim();
+                var newPwd = $('#newPassword').val().trim();
+                var confirmPwd = $('#confirmPassword').val().trim();
+
+                if (!oldPwd || !newPwd || !confirmPwd) {
+                    ShituAdmin.toast('请填写完整密码信息', 'warning');
+                    return;
+                }
+
+                if (newPwd.length < 6) {
+                    ShituAdmin.toast('新密码长度不能少于6位', 'warning');
+                    return;
+                }
+
+                if (newPwd !== confirmPwd) {
+                    ShituAdmin.toast('两次输入的新密码不一致', 'warning');
+                    return;
+                }
+
+                $.post('/admin/change-password', {
+                    oldPassword: oldPwd,
+                    newPassword: newPwd
+                }, function(res) {
+                    if (res.success) {
+                        ShituAdmin.toast(res.message, 'success');
+                        $('#changePwdModal').modal('hide');
+                        $('#oldPassword, #newPassword, #confirmPassword').val('');
+                    } else {
+                        ShituAdmin.toast(res.message, 'danger');
+                    }
+                }).fail(function() {
+                    ShituAdmin.toast('请求失败，请稍后重试', 'danger');
+                });
+            });
+
+            // 模态框关闭时清空密码
+            $('#changePwdModal').on('hidden.bs.modal', function() {
+                $('#oldPassword, #newPassword, #confirmPassword').val('');
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

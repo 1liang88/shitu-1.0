@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- 引用布局的head部分 -->
+<head th:replace="~{layout :: head}"></head>
+<body>
+<!-- 引用布局的主体fragment -->
+<div th:replace="~{layout :: layout(title='点位管理', menu='place', content=~{::content})}"></div>
+
+<!-- 页面具体内容 -->
+<div th:fragment="content">
+    <div class="container-fluid">
+        <!-- 页面标题和操作按钮 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-map-marker-alt me-2"></i>点位管理</h2>
+            <a href="/place/add" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>新增点位
+            </a>
+        </div>
+
+        <!-- 错误提示 -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${error}">错误信息</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- 搜索筛选栏 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="keywordInput" class="form-label">关键词</label>
+                        <input type="text" class="form-control" id="keywordInput" name="keyword"
+                               th:value="${keyword}" placeholder="名称/地址">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="categorySelect" class="form-label">分类</label>
+                        <select class="form-select" id="categorySelect" name="categoryId">
+                            <option value="">全部</option>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.name}"
+                                    th:selected="${categoryId == cat.id}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="statusSelect" class="form-label">状态</label>
+                        <select class="form-select" id="statusSelect" name="status">
+                            <option value="">全部</option>
+                            <option value="1" th:selected="${status == 1}">已发布</option>
+                            <option value="0" th:selected="${status == 0}">待审核</option>
+                            <option value="2" th:selected="${status == 2}">已下架</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>搜索
+                        </button>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end justify-content-end">
+                        <a href="/place" class="btn btn-secondary">
+                            <i class="fas fa-redo me-2"></i>重置
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th>ID</th>
+                            <th>点位名称</th>
+                            <th>分类</th>
+                            <th>地址</th>
+                            <th>联系电话</th>
+                            <th>访问量</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th width="200">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="place : ${page.list}">
+                            <td>
+                                <input type="checkbox" class="item-checkbox form-check-input" th:value="${place.id}">
+                            </td>
+                            <td th:text="${place.id}">1</td>
+                            <td>
+                                <a th:href="@{/place/view/{id}(id=${place.id})}"
+                                   class="text-decoration-none text-dark fw-medium" th:text="${place.name}">
+                                    人民广场公厕
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary" th:text="${place.categoryName}">公厕</span>
+                            </td>
+                            <td th:text="${place.address}" class="text-muted">人民广场东南角</td>
+                            <td th:text="${place.contactPhone ?: '-'}" class="text-muted">13800138000</td>
+                            <td>
+                                <span class="badge bg-secondary" th:text="${place.visitCount}">0</span>
+                            </td>
+                            <td>
+                                <span th:if="${place.status == 1}" class="badge bg-success">已发布</span>
+                                <span th:if="${place.status == 0}" class="badge bg-warning">待审核</span>
+                                <span th:if="${place.status == 2}" class="badge bg-danger">已下架</span>
+                            </td>
+                            <td th:text="${place.createTime != null ? #temporals.format(place.createTime, 'yyyy-MM-dd HH:mm') : '-'}" class="text-muted">2024-01-01 12:00</td>
+                            <td>
+                                <!-- 操作按钮改为中性灰系，增加间距 -->
+                                <a th:href="@{/place/view/{id}(id=${place.id})}"
+                                   class="btn btn-sm btn-secondary btn-action me-1" title="查看">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a th:href="@{/place/edit/{id}(id=${place.id})}"
+                                   class="btn btn-sm btn-secondary btn-action me-1" title="编辑">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-success btn-action status-btn me-1"
+                                        th:if="${place.status == 0}"
+                                        th:data-id="${place.id}"
+                                        th:data-status="1"
+                                        title="发布">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary btn-action status-btn me-1"
+                                        th:if="${place.status == 1}"
+                                        th:data-id="${place.id}"
+                                        th:data-status="2"
+                                        title="下架">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-action delete-btn"
+                                        th:data-id="${place.id}"
+                                        th:data-name="${place.name}"
+                                        title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <!-- 空数据提示 -->
+                        <tr th:if="${page == null or page.list == null or page.list.isEmpty()}">
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                暂无数据
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 批量操作栏 -->
+                <div class="row mt-3 align-items-center" th:if="${page != null and page.list != null and !page.list.isEmpty()}">
+                    <div class="col-md-4">
+                        <div class="btn-group">
+                            <button class="btn btn-danger" id="batchDeleteBtn" disabled>
+                                <i class="fas fa-trash-alt me-2"></i>批量删除
+                            </button>
+                            <button class="btn btn-success" id="batchPublishBtn" disabled>
+                                <i class="fas fa-check-circle me-2"></i>批量发布
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <!-- 分页 -->
+                        <nav aria-label="Page navigation" class="float-end">
+                            <ul class="pagination">
+                                <li class="page-item" th:classappend="${page.pageNum <= 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/place(pageNum=${page.pageNum-1}, pageSize=${page.pageSize}, keyword=${keyword}, categoryId=${categoryId}, status=${status})}">
+                                        上一页
+                                    </a>
+                                </li>
+                                <li class="page-item" th:each="i : ${#numbers.sequence(1, page.pages)}"
+                                    th:classappend="${i == page.pageNum ? 'active' : ''}">
+                                    <a class="page-link" th:href="@{/place(pageNum=${i}, pageSize=${page.pageSize}, keyword=${keyword}, categoryId=${categoryId}, status=${status})}"
+                                       th:text="${i}">1</a>
+                                </li>
+                                <li class="page-item" th:classappend="${page.pageNum >= page.pages ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/place(pageNum=${page.pageNum+1}, pageSize=${page.pageSize}, keyword=${keyword}, categoryId=${categoryId}, status=${status})}">
+                                        下一页
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 - 优化样式 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-sm">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title text-dark">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p id="deleteMessage" class="text-dark mb-0"></p>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        (function() {
+            // 自定义样式补充
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 点位管理页面专属样式优化 */
+                .form-label {
+                    color: #4a5568;
+                    font-weight: 500;
+                    font-size: 14px;
+                }
+                .form-control, .form-select {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    color: #2d3748;
+                    font-size: 14px;
+                }
+                .form-control:focus, .form-select:focus {
+                    border-color: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.1);
+                    outline: none;
+                }
+                .form-check-input {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 4px;
+                    width: 16px;
+                    height: 16px;
+                }
+                .form-check-input:checked {
+                    background-color: #4a5568;
+                    border-color: #4a5568;
+                }
+                .btn {
+                    border-radius: 6px;
+                    font-size: 14px;
+                    padding: 8px 16px;
+                    border: none;
+                    transition: all 0.2s ease;
+                }
+                .btn-primary {
+                    background-color: #4a5568;
+                }
+                .btn-primary:hover {
+                    background-color: #2d3748;
+                }
+                .btn-secondary {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .btn-secondary:hover {
+                    background-color: #4a5568;
+                    color: #ffffff;
+                }
+                .btn-sm {
+                    padding: 4px 8px;
+                    font-size: 12px;
+                }
+                .btn-action {
+                    margin-bottom: 2px;
+                }
+                .me-1 {
+                    margin-right: 4px !important;
+                }
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    background-color: #ffffff;
+                }
+                .card-body {
+                    padding: 20px;
+                }
+                .table {
+                    color: #4a5568;
+                    font-size: 14px;
+                    margin-bottom: 0;
+                }
+                .table th {
+                    background-color: #f7fafc;
+                    border-bottom: 2px solid #e2e8f0;
+                    color: #2d3748;
+                    font-weight: 600;
+                    padding: 12px 8px;
+                }
+                .table td {
+                    border-bottom: 1px solid #e2e8f0;
+                    padding: 12px 8px;
+                    vertical-align: middle;
+                }
+                .table-hover tbody tr:hover {
+                    background-color: #f7fafc;
+                }
+                .badge {
+                    font-size: 12px;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                }
+                .pagination .page-link {
+                    color: #4a5568;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    margin: 0 2px;
+                }
+                .pagination .page-item.active .page-link {
+                    background-color: #4a5568;
+                    border-color: #4a5568;
+                    color: #ffffff;
+                }
+                .pagination .page-link:hover {
+                    background-color: #f7fafc;
+                    border-color: #4a5568;
+                    color: #2d3748;
+                }
+                h2 {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 20px;
+                    margin: 0;
+                }
+                .alert {
+                    border-radius: 8px;
+                    border: 1px solid #feb2b2;
+                    background-color: #fff5f5;
+                    color: #c53030;
+                    padding: 12px 16px;
+                }
+                .modal-content {
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                }
+                .modal-header {
+                    background-color: #f7fafc;
+                    border-bottom: 1px solid #e2e8f0;
+                    border-radius: 8px 8px 0 0;
+                    padding: 12px 20px;
+                }
+                .modal-title {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 16px;
+                }
+                .modal-body {
+                    padding: 20px;
+                    color: #4a5568;
+                }
+                .modal-footer {
+                    border-top: 1px solid #e2e8f0;
+                    padding: 12px 20px;
+                }
+                .btn-group .btn {
+                    margin-right: 8px;
+                }
+                .btn-group .btn:last-child {
+                    margin-right: 0;
+                }
+                .btn:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 确保 ShituAdmin 存在
+            if (typeof ShituAdmin === 'undefined') {
+                window.ShituAdmin = {
+                    toast: function(message, type) {
+                        // 创建自定义提示框
+                        const toast = document.createElement('div');
+                        toast.className = `position-fixed top-20 start-50 translate-middle-x alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(toast);
+
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Alert(toast);
+                            bsToast.close();
+                            setTimeout(() => toast.remove(), 500);
+                        }, 3000);
+                    },
+                    confirm: function(message, callback) {
+                        if (confirm(message)) {
+                            callback();
+                        }
+                    }
+                };
+            }
+
+            // 全选/取消全选
+            const selectAll = document.getElementById('selectAll');
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    document.querySelectorAll('.item-checkbox').forEach(cb => {
+                        cb.checked = this.checked;
+                    });
+                    updateBatchButtons();
+                });
+            }
+
+            // 单个选择
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const allCheckboxes = document.querySelectorAll('.item-checkbox');
+                    const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+                    const allChecked = checkedCount === allCheckboxes.length && allCheckboxes.length > 0;
+
+                    if (selectAll) selectAll.checked = allChecked;
+                    updateBatchButtons();
+                });
+            });
+
+            // 更新批量按钮状态
+            function updateBatchButtons() {
+                const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+                const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+                const batchPublishBtn = document.getElementById('batchPublishBtn');
+
+                if (batchDeleteBtn) batchDeleteBtn.disabled = checkedCount === 0;
+                if (batchPublishBtn) batchPublishBtn.disabled = checkedCount === 0;
+            }
+
+            // 删除单个
+            let deleteId = null;
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    deleteId = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    document.getElementById('deleteMessage').textContent = '确定要删除点位 "' + name + '" 吗？';
+
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                    deleteModal.show();
+                });
+            });
+
+            document.getElementById('confirmDelete').addEventListener('click', function() {
+                if (deleteId) {
+                    fetch('/place/delete/' + deleteId, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(res => {
+                            if (res.success) {
+                                ShituAdmin.toast(res.message, 'success');
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                ShituAdmin.toast(res.message, 'danger');
+                            }
+                            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                        })
+                        .catch(error => {
+                            ShituAdmin.toast('请求失败，请稍后重试', 'danger');
+                            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                        });
+                }
+            });
+
+            // 批量删除
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            if (batchDeleteBtn) {
+                batchDeleteBtn.addEventListener('click', function() {
+                    const ids = [];
+                    document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+                        ids.push(cb.value);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    ShituAdmin.confirm('确定要删除选中的 ' + ids.length + ' 个点位吗？', function() {
+                        fetch('/place/batch-delete', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(ids)
+                        })
+                            .then(response => response.json())
+                            .then(res => {
+                                if (res.success) {
+                                    ShituAdmin.toast(res.message, 'success');
+                                    setTimeout(() => location.reload(), 1000);
+                                } else {
+                                    ShituAdmin.toast(res.message, 'danger');
+                                }
+                            })
+                            .catch(error => {
+                                ShituAdmin.toast('请求失败，请稍后重试', 'danger');
+                            });
+                    });
+                });
+            }
+
+            // 批量发布
+            const batchPublishBtn = document.getElementById('batchPublishBtn');
+            if (batchPublishBtn) {
+                batchPublishBtn.addEventListener('click', function() {
+                    const ids = [];
+                    document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+                        ids.push(cb.value);
+                    });
+
+                    if (ids.length === 0) return;
+
+                    ShituAdmin.confirm('确定要发布选中的 ' + ids.length + ' 个点位吗？', function() {
+                        fetch('/place/batch-update-status', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ids: ids,
+                                status: 1
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(res => {
+                                if (res.success) {
+                                    ShituAdmin.toast(res.message, 'success');
+                                    setTimeout(() => location.reload(), 1000);
+                                } else {
+                                    ShituAdmin.toast(res.message, 'danger');
+                                }
+                            })
+                            .catch(error => {
+                                ShituAdmin.toast('请求失败，请稍后重试', 'danger');
+                            });
+                    });
+                });
+            }
+
+            // 更新状态
+            document.querySelectorAll('.status-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const status = this.getAttribute('data-status');
+                    const action = status === '1' ? '发布' : '下架';
+
+                    ShituAdmin.confirm('确定要' + action + '该点位吗？', function() {
+                        fetch('/place/update-status', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: 'id=' + id + '&status=' + status
+                        })
+                            .then(response => response.json())
+                            .then(res => {
+                                if (res.success) {
+                                    ShituAdmin.toast(res.message, 'success');
+                                    setTimeout(() => location.reload(), 1000);
+                                } else {
+                                    ShituAdmin.toast(res.message, 'danger');
+                                }
+                            })
+                            .catch(error => {
+                                ShituAdmin.toast('请求失败，请稍后重试', 'danger');
+                            });
+                    });
+                });
+            });
+
+            // 初始化批量按钮状态
+            updateBatchButtons();
+        })();
+    </script>
+</div>
+</body>
+</html>

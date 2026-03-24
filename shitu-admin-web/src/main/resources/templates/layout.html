@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' - 识途管理后台'">识途管理后台</title>
+
+    <!-- 外部资源引用 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.3.0/css/all.min.css"
+          rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+    <!-- 整合自定义样式（无蓝色纯中性灰系） -->
+    <style>
+        /* 全局样式 - 中性色优化（增强可读性和呼吸感） */
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f9f9f9; /* 更柔和的浅灰 */
+            padding-top: 60px;
+            padding-left: 250px;
+            color: #333; /* 正文统一深灰，替代纯黑更护眼 */
+            line-height: 1.6; /* 增加行高提升可读性 */
+            margin: 0; /* 重置默认边距 */
+        }
+
+        /* 侧边栏 - 纯中性灰系，优化层次感和交互 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 60px;
+            bottom: 0;
+            width: 250px;
+            background-color: #2d3748; /* 深灰，中性且沉稳 */
+            color: #e2e8f0; /* 浅灰文字 */
+            overflow-y: auto;
+            z-index: 100;
+            border-right: 1px solid #e2e8f0;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05); /* 轻微阴影增强层次感 */
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            display: block;
+            padding: 12px 25px;
+            color: #a0aec0; /* 次级文字色 */
+            text-decoration: none;
+            transition: all 0.2s ease; /* 缩短过渡时间更丝滑 */
+            position: relative;
+            font-size: 14px; /* 统一字号 */
+        }
+
+        .menu-item:hover {
+            background-color: #4a5568; /* hover浅灰，无透明渐变 */
+            color: #ffffff;
+            padding-left: 30px;
+            font-weight: 500; /* hover轻微加粗 */
+        }
+
+        .menu-item.active {
+            background-color: #4a5568; /* 选中态纯色，无渐变 */
+            color: #ffffff;
+            border-left: 4px solid #718096; /* 纯中性灰边框，无蓝色 */
+            font-weight: 600; /* 选中态加粗 */
+        }
+
+        .menu-item i {
+            width: 22px; /* 微调图标宽度更均衡 */
+            font-size: 16px; /* 统一图标大小 */
+            margin-right: 8px; /* 增加图标与文字间距 */
+        }
+
+        .menu-item .badge {
+            position: absolute;
+            right: 20px;
+            top: 12px;
+            background-color: #e53e3e; /* 仅提示角标保留红色（功能性强调） */
+            font-size: 11px; /* 缩小角标字号更精致 */
+            padding: 2px 6px; /* 优化角标内边距 */
+            border-radius: 10px; /* 圆角更圆润 */
+        }
+
+        /* 主内容区 */
+        .main-content {
+            padding: 25px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* 统计卡片 - 轻量化，无阴影渐变 */
+        .stat-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px; /* 圆角更克制 */
+            transition: all 0.3s ease;
+            background-color: #ffffff;
+            margin-bottom: 20px; /* 增加卡片间距 */
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* 轻微阴影，不夸张 */
+            transform: translateY(-1px); /* hover动效更柔和 */
+            border-color: #d1d5db; /* hover轻微加深边框 */
+        }
+
+        .stat-card .card-body {
+            padding: 20px;
+        }
+
+        /* 表格样式 - 纯中性色优化 */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #ffffff; /* 表格背景纯白 */
+            border-radius: 8px; /* 表格整体圆角 */
+            overflow: hidden; /* 裁剪圆角溢出 */
+        }
+
+        .table th {
+            background-color: #f7fafc; /* 浅灰表头 */
+            border-bottom: 2px solid #e2e8f0;
+            color: #2d3748;
+            font-weight: 600;
+            padding: 12px 15px; /* 优化单元格内边距 */
+        }
+
+        .table td {
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+            padding: 12px 15px; /* 优化单元格内边距 */
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f7fafc; /* 中性hover色 */
+        }
+
+        /* 按钮样式 - 纯中性色替代蓝色/渐变 */
+        .btn {
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            padding: 6px 12px; /* 统一按钮内边距 */
+            font-size: 14px; /* 统一按钮字号 */
+            border: none;
+        }
+
+        .btn-action {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin: 0 2px;
+        }
+
+        /* 主按钮改用中性深灰，无蓝色 */
+        .btn-primary {
+            background-color: #4a5568; /* 中性深灰替代蓝色 */
+        }
+
+        .btn-primary:hover {
+            background-color: #2d3748; /* hover加深深灰 */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* 轻微阴影增强交互 */
+        }
+
+        .btn-success {
+            background-color: #48bb78; /* 中性绿（保留功能性） */
+            border: none;
+        }
+
+        .btn-success:hover {
+            background-color: #38a169;
+            box-shadow: 0 2px 8px rgba(72, 187, 120, 0.2);
+        }
+
+        .btn-danger {
+            background-color: #e53e3e; /* 中性红（保留功能性） */
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #c53030;
+            box-shadow: 0 2px 8px rgba(229, 62, 62, 0.2);
+        }
+
+        /* 模态框 - 纯中性色优化 */
+        .modal-content {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: none; /* 去掉边框更简洁 */
+        }
+
+        .modal-header {
+            background-color: #f7fafc; /* 中性表头 */
+            color: #2d3748;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 8px 8px 0 0;
+            padding: 15px 20px; /* 优化内边距 */
+        }
+
+        .modal-header .btn-close {
+            filter: none; /* 去掉反色，用默认样式 */
+            opacity: 0.7;
+            margin: -15px -20px -15px auto; /* 调整关闭按钮位置 */
+        }
+
+        .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 20px; /* 优化模态框内容内边距 */
+        }
+
+        /* 分页 - 纯中性色优化（无蓝色） */
+        .pagination .page-link {
+            color: #4a5568; /* 中性灰文字替代蓝色 */
+            border: 1px solid #e2e8f0;
+            margin: 0 2px;
+            border-radius: 6px;
+            padding: 6px 12px; /* 优化分页按钮内边距 */
+        }
+
+        .pagination .page-link:hover {
+            background-color: #f7fafc;
+            border-color: #4a5568; /* 中性灰边框替代蓝色 */
+            color: #2d3748;
+        }
+
+        .pagination .active .page-link {
+            background-color: #4a5568; /* 中性深灰背景替代蓝色 */
+            border-color: #4a5568;
+            color: #ffffff;
+        }
+
+        /* 顶部导航栏 - 纯中性色（与侧边栏统一） */
+        .navbar-dark.bg-primary {
+            background-color: #2d3748 !important; /* 深灰，无蓝色 */
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05); /* 轻微阴影增强层次感 */
+        }
+
+        /* 下拉菜单样式优化 */
+        .dropdown-menu {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 8px 0;
+        }
+
+        .dropdown-item {
+            color: #4a5568;
+            padding: 8px 16px;
+            transition: background-color 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            body {
+                padding-left: 0;
+            }
+            .sidebar {
+                left: -250px;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1); /* 移动端增加阴影 */
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .main-content {
+                padding: 15px; /* 移动端减小内边距 */
+            }
+        }
+    </style>
+</head>
+<body>
+<th:block th:fragment="layout(title, menu, content)">
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-map-signal me-2"></i>
+                识途管理后台
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    onclick="$('.sidebar').toggleClass('show')">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span th:text="${session.adminName ?: '管理员'}">管理员</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-key me-2"></i>修改密码</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <a href="/dashboard" class="menu-item" th:classappend="${menu == 'dashboard' ? 'active' : ''}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>仪表盘</span>
+            </a>
+            <a href="/place" class="menu-item" th:classappend="${menu == 'place' ? 'active' : ''}">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>点位管理</span>
+            </a>
+            <a href="/category" class="menu-item" th:classappend="${menu == 'category' ? 'active' : ''}">
+                <i class="fas fa-tags"></i>
+                <span>分类管理</span>
+            </a>
+            <a href="/report" class="menu-item" th:classappend="${menu == 'report' ? 'active' : ''}">
+                <i class="fas fa-flag"></i>
+                <span>上报审核</span>
+                <span class="badge bg-danger" id="pendingCount" style="display: none;">0</span>
+            </a>
+            <a href="/admin" class="menu-item" th:classappend="${menu == 'admin' ? 'active' : ''}">
+                <i class="fas fa-users-cog"></i>
+                <span>管理员管理</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div th:replace="${content}"></div>
+    </div>
+
+    <!-- 通用JS -->
+    <script th:src="@{/js/admin.js}"></script>
+    <script>
+        $(function() {
+            // 加载待审核数量
+            $.get('/api/report/pending/count', function(res) {
+                if (res && res.success && res.data > 0) {
+                    $('#pendingCount').text(res.data).show();
+                }
+            }).fail(function() {
+                // 增加异常处理，避免接口报错影响页面
+                console.log('获取待审核数量失败');
+            });
+
+            // 点击空白处关闭移动端侧边栏
+            $(document).click(function(e) {
+                if ($(window).width() < 768 &&
+                    !$(e.target).closest('.sidebar').length &&
+                    !$(e.target).closest('.navbar-toggler').length &&
+                    $('.sidebar').hasClass('show')) {
+                    $('.sidebar').removeClass('show');
+                }
+            });
+        });
+    </script>
+</th:block>
+</body>
+</html>

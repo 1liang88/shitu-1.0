@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head}"></head>
+<body>
+<div th:replace="~{layout :: layout(title='上报详情', menu='report', content=~{::content})}"></div>
+<div th:fragment="content">
+    <meta charset="UTF-8">
+    <div class="container-fluid">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-alt me-2"></i>上报详情</h2>
+            <div>
+                <a href="/report" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回列表
+                </a>
+            </div>
+        </div>
+
+        <!-- 错误提示 -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${error}">错误信息</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- 详情卡片 -->
+        <div class="card" th:if="${report != null}">
+            <div class="card-header bg-light border-bottom">
+                <h5 class="card-title mb-0 text-dark">基本信息</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tbody>
+                    <tr>
+                        <td width="150" class="fw-medium text-secondary">上报ID</td>
+                        <td width="250" th:text="${report.id}">1</td>
+                        <td width="150" class="fw-medium text-secondary">上报类型</td>
+                        <td>
+                            <span th:if="${report.reportType == 1}" class="badge bg-secondary">新增</span>
+                            <span th:if="${report.reportType == 2}" class="badge bg-warning">纠错</span>
+                            <span th:if="${report.reportType == 3}" class="badge bg-secondary">反馈</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary">点位名称</td>
+                        <td class="text-dark" th:text="${report.placeName}">人民广场新公厕</td>
+                        <td class="fw-medium text-secondary">所属分类</td>
+                        <td>
+                            <span class="badge bg-secondary" th:text="${report.categoryName}">公厕</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary">详细地址</td>
+                        <td colspan="3" class="text-dark" th:text="${report.address}">人民广场东南角</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary">经纬度</td>
+                        <td colspan="3">
+                            <span th:if="${report.longitude != null and report.latitude != null}" class="text-dark">
+                                <span th:text="${report.longitude}">116.397128</span>,
+                                <span th:text="${report.latitude}">39.916527</span>
+                            </span>
+                            <span th:unless="${report.longitude != null and report.latitude != null}" class="text-muted">
+                                未提供
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary">联系方式</td>
+                        <td class="text-muted" th:text="${report.contactInfo ?: '-'}">13800138000</td>
+                        <td class="fw-medium text-secondary">上报人</td>
+                        <td class="text-muted" th:text="${report.reporterName ?: '匿名'}">张三</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary">上报人电话</td>
+                        <td class="text-muted" th:text="${report.reporterPhone ?: '-'}">13800138000</td>
+                        <td class="fw-medium text-secondary">上报时间</td>
+                        <td class="text-muted" th:text="${#temporals.format(report.createTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary align-top">上报内容</td>
+                        <td colspan="3" class="text-dark" style="line-height: 1.6;" th:text="${report.content ?: '-'}">新增公厕，24小时开放</td>
+                    </tr>
+                    <tr th:if="${report.images != null and !report.images.isEmpty()}">
+                        <td class="fw-medium text-secondary">图片</td>
+                        <td colspan="3">
+                            <div class="d-flex flex-wrap gap-3 mt-1">
+                                <div th:each="img : ${#strings.arraySplit(report.images, ',')}"
+                                     class="border rounded p-3 bg-light" style="width: 120px; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image fa-2x text-secondary mb-2"></i>
+                                    <div class="small text-muted text-center" th:text="${#strings.substringAfterLast(img, '/')}">image.jpg</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-medium text-secondary">状态</td>
+                        <td colspan="3">
+                            <span th:if="${report.status == 0}" class="badge bg-warning">待处理</span>
+                            <span th:if="${report.status == 1}" class="badge bg-success">已通过</span>
+                            <span th:if="${report.status == 2}" class="badge bg-danger">已驳回</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${report.status != 0}">
+                        <td class="fw-medium text-secondary align-top">审核信息</td>
+                        <td colspan="3" class="text-muted">
+                            <div class="mb-1">审核人：<span th:text="${report.auditByName ?: '系统'}" class="text-dark">管理员</span></div>
+                            <div class="mb-1">审核时间：<span th:text="${#temporals.format(report.auditTime, 'yyyy-MM-dd HH:mm')}" class="text-dark">2024-01-01 14:00</span></div>
+                            <div th:if="${report.auditRemark}" class="mb-1">备注：<span th:text="${report.auditRemark}" class="text-dark">审核通过</span></div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light border-top" th:if="${report.status == 0}">
+                <button class="btn btn-success me-2" id="approveBtn" th:data-id="${report.id}">
+                    <i class="fas fa-check me-2"></i>通过
+                </button>
+                <button class="btn btn-warning me-2" id="rejectBtn" th:data-id="${report.id}">
+                    <i class="fas fa-times me-2"></i>驳回
+                </button>
+            </div>
+        </div>
+
+        <!-- 上报记录不存在提示 -->
+        <div class="alert alert-warning alert-dismissible fade show" th:if="${report == null and error == null}">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            上报记录不存在或已被删除
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+
+    <!-- 审核模态框 -->
+    <div class="modal fade" id="auditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title text-dark" id="auditModalTitle">审核</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="auditId">
+                    <input type="hidden" id="auditAction">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">审核备注</label>
+                        <textarea class="form-control" id="auditRemark" rows="3"
+                                  placeholder="请输入审核备注（可选）"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmAudit">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function() {
+            // 自定义样式补充
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 上报详情页面专属样式优化 */
+                h2 {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 20px;
+                    margin: 0;
+                }
+                .btn {
+                    border-radius: 6px;
+                    font-size: 14px;
+                    padding: 8px 16px;
+                    border: none;
+                    transition: all 0.2s ease;
+                }
+                .btn-secondary {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .btn-secondary:hover {
+                    background-color: #4a5568;
+                    color: #ffffff;
+                }
+                .btn-success {
+                    background-color: #38a169;
+                    color: #ffffff;
+                }
+                .btn-success:hover {
+                    background-color: #2f855a;
+                    color: #ffffff;
+                }
+                .btn-warning {
+                    background-color: #d69e2e;
+                    color: #ffffff;
+                }
+                .btn-warning:hover {
+                    background-color: #b7791f;
+                    color: #ffffff;
+                }
+                .me-2 {
+                    margin-right: 8px !important;
+                }
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    background-color: #ffffff;
+                }
+                .card-header {
+                    padding: 12px 20px;
+                    border-bottom: 1px solid #e2e8f0;
+                }
+                .card-header.bg-light {
+                    background-color: #f7fafc;
+                }
+                .card-body {
+                    padding: 24px;
+                }
+                .card-footer {
+                    padding: 12px 20px;
+                    border-top: 1px solid #e2e8f0;
+                }
+                .card-title {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #2d3748;
+                }
+                .table {
+                    width: 100%;
+                    margin-bottom: 0;
+                    color: #4a5568;
+                    font-size: 14px;
+                }
+                .table-borderless > :not(caption) > * > * {
+                    border-bottom: 1px solid #f0f0f0;
+                    padding: 12px 8px;
+                    vertical-align: middle;
+                }
+                .table-borderless > tbody > tr:last-child > td {
+                    border-bottom: none;
+                }
+                .fw-medium {
+                    font-weight: 500;
+                }
+                .text-secondary {
+                    color: #718096 !important;
+                }
+                .text-dark {
+                    color: #2d3748 !important;
+                }
+                .text-muted {
+                    color: #a0aec0 !important;
+                }
+                .badge {
+                    font-size: 12px;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                }
+                .badge.bg-secondary {
+                    background-color: #718096 !important;
+                }
+                .alert {
+                    border-radius: 8px;
+                    border: 1px solid #fcd34d;
+                    background-color: #fefcbf;
+                    color: #92400e;
+                    padding: 12px 16px;
+                }
+                .alert-danger {
+                    border-color: #feb2b2;
+                    background-color: #fff5f5;
+                    color: #c53030;
+                }
+                .align-top {
+                    vertical-align: top !important;
+                }
+                .modal-content {
+                    border-radius: 8px;
+                }
+                .modal-header {
+                    padding: 12px 20px;
+                }
+                .modal-body {
+                    padding: 20px;
+                }
+                .modal-footer {
+                    padding: 12px 20px;
+                }
+                .form-control {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    color: #2d3748;
+                    font-size: 14px;
+                }
+                .form-control:focus {
+                    border-color: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.1);
+                    outline: none;
+                }
+                .form-label {
+                    color: #4a5568;
+                    font-weight: 500;
+                    font-size: 14px;
+                    margin-bottom: 8px;
+                }
+                .btn:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 确保 ShituAdmin 存在
+            if (typeof ShituAdmin === 'undefined') {
+                window.ShituAdmin = {
+                    toast: function(message, type) {
+                        // 创建自定义提示框
+                        const toast = document.createElement('div');
+                        toast.className = `position-fixed top-20 start-50 translate-middle-x alert alert-${
+                            type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'
+                        } alert-dismissible fade show`;
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <i class="fas fa-${
+                            type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'
+                        } me-2"></i>
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(toast);
+
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Alert(toast);
+                            bsToast.close();
+                            setTimeout(() => toast.remove(), 500);
+                        }, 3000);
+                    }
+                };
+            }
+
+            // 通过审核
+            $('#approveBtn').click(function() {
+                var id = $(this).data('id');
+                if (!id) {
+                    ShituAdmin.toast('上报ID不能为空', 'warning');
+                    return;
+                }
+
+                $('#auditId').val(id);
+                $('#auditAction').val('approve');
+                $('#auditModalTitle').text('通过审核');
+                $('#auditModal').modal('show');
+            });
+
+            // 驳回审核
+            $('#rejectBtn').click(function() {
+                var id = $(this).data('id');
+                if (!id) {
+                    ShituAdmin.toast('上报ID不能为空', 'warning');
+                    return;
+                }
+
+                $('#auditId').val(id);
+                $('#auditAction').val('reject');
+                $('#auditModalTitle').text('驳回审核');
+                $('#auditModal').modal('show');
+            });
+
+            // 确认审核操作
+            $('#confirmAudit').click(function() {
+                var id = $('#auditId').val();
+                var action = $('#auditAction').val();
+                var status = action === 'approve' ? 1 : 2;
+                var remark = $('#auditRemark').val().trim();
+
+                // 基础验证
+                if (!id) {
+                    ShituAdmin.toast('审核ID不能为空', 'warning');
+                    return;
+                }
+
+                // 驳回时备注必填
+                if (status === 2 && !remark) {
+                    ShituAdmin.toast('驳回理由不能为空', 'warning');
+                    return;
+                }
+
+                var $confirmBtn = $(this);
+                $confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>处理中...');
+
+                $.ajax({
+                    url: '/report/audit/' + id,
+                    type: 'PUT',
+                    data: {
+                        status: status,
+                        remark: remark
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            ShituAdmin.toast(res.message, 'success');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            ShituAdmin.toast(res.message, 'danger');
+                        }
+                        $('#auditModal').modal('hide');
+                        $('#auditRemark').val('');
+                    },
+                    error: function(xhr) {
+                        var errorMsg = xhr.responseJSON?.message || xhr.statusText || '请求失败';
+                        ShituAdmin.toast('审核失败：' + errorMsg, 'danger');
+                        $('#auditModal').modal('hide');
+                    },
+                    complete: function() {
+                        $confirmBtn.prop('disabled', false).text('确认');
+                    }
+                });
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

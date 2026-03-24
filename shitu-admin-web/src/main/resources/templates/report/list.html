@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head}"></head>
+<body>
+<div th:replace="~{layout :: layout(title='上报审核', menu='report', content=~{::content})}"></div>
+<div th:fragment="content">
+    <meta charset="UTF-8">
+    <div class="container-fluid">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-flag me-2"></i>上报审核</h2>
+        </div>
+
+        <!-- 搜索筛选栏 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">关键词</label>
+                        <input type="text" class="form-control" name="keyword"
+                               th:value="${keyword}" placeholder="点位名称/地址/上报人">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">分类</label>
+                        <select class="form-select" name="categoryId">
+                            <option value="">全部</option>
+                            <option th:each="cat : ${categories}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.name}"
+                                    th:selected="${categoryId == cat.id}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">上报类型</label>
+                        <select class="form-select" name="reportType">
+                            <option value="">全部</option>
+                            <option value="1" th:selected="${reportType == 1}">新增</option>
+                            <option value="2" th:selected="${reportType == 2}">纠错</option>
+                            <option value="3" th:selected="${reportType == 3}">反馈</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">状态</label>
+                        <select class="form-select" name="status">
+                            <option value="">全部</option>
+                            <option value="0" th:selected="${status == 0}">待处理</option>
+                            <option value="1" th:selected="${status == 1}">已通过</option>
+                            <option value="2" th:selected="${status == 2}">已驳回</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>搜索
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 批量操作栏 -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="btn-group">
+                    <button class="btn btn-success" id="batchApproveBtn" disabled>
+                        <i class="fas fa-check-circle me-2"></i>批量通过
+                    </button>
+                    <button class="btn btn-warning" id="batchRejectBtn" disabled>
+                        <i class="fas fa-times-circle me-2"></i>批量驳回
+                    </button>
+                    <button class="btn btn-danger" id="batchDeleteBtn" disabled>
+                        <i class="fas fa-trash-alt me-2"></i>批量删除
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th>ID</th>
+                            <th>点位名称</th>
+                            <th>分类</th>
+                            <th>地址</th>
+                            <th>上报类型</th>
+                            <th>上报人</th>
+                            <th>联系电话</th>
+                            <th>状态</th>
+                            <th>上报时间</th>
+                            <th width="200">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="report : ${page.list}">
+                            <td>
+                                <input type="checkbox" class="item-checkbox form-check-input" th:value="${report.id}">
+                            </td>
+                            <td th:text="${report.id}">1</td>
+                            <td>
+                                <a href="#" th:href="@{/report/view/{id}(id=${report.id})}"
+                                   class="text-decoration-none text-dark fw-medium" th:text="${report.placeName}">
+                                    人民广场新公厕
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary" th:text="${report.categoryName}">公厕</span>
+                            </td>
+                            <td th:text="${report.address}" class="text-muted">人民广场东南角</td>
+                            <td>
+                                <span th:if="${report.reportType == 1}" class="badge bg-secondary">新增</span>
+                                <span th:if="${report.reportType == 2}" class="badge bg-warning">纠错</span>
+                                <span th:if="${report.reportType == 3}" class="badge bg-secondary">反馈</span>
+                            </td>
+                            <td th:text="${report.reporterName ?: '匿名'}" class="text-muted">张三</td>
+                            <td th:text="${report.reporterPhone ?: '-'}" class="text-muted">13800138000</td>
+                            <td>
+                                <span th:if="${report.status == 0}" class="badge bg-warning">待处理</span>
+                                <span th:if="${report.status == 1}" class="badge bg-success">已通过</span>
+                                <span th:if="${report.status == 2}" class="badge bg-danger">已驳回</span>
+                            </td>
+                            <td th:text="${#temporals.format(report.createTime, 'yyyy-MM-dd HH:mm')}" class="text-muted">2024-01-01 12:00</td>
+                            <td>
+                                <a th:href="@{/report/view/{id}(id=${report.id})}"
+                                   class="btn btn-sm btn-secondary btn-action me-1" title="查看">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-success btn-action me-1 approve-btn"
+                                        th:if="${report.status == 0}"
+                                        th:data-id="${report.id}"
+                                        title="通过">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning btn-action me-1 reject-btn"
+                                        th:if="${report.status == 0}"
+                                        th:data-id="${report.id}"
+                                        title="驳回">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-action delete-btn"
+                                        th:data-id="${report.id}"
+                                        th:data-name="${report.placeName}"
+                                        title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:if="${page.list == null or page.list.isEmpty()}">
+                            <td colspan="11" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                暂无数据
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <nav aria-label="Page navigation" class="float-end">
+                            <ul class="pagination">
+                                <li class="page-item" th:classappend="${page.pageNum <= 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/report(pageNum=${page.pageNum-1}, pageSize=${page.pageSize}, keyword=${keyword}, categoryId=${categoryId}, reportType=${reportType}, status=${status})}">
+                                        上一页
+                                    </a>
+                                </li>
+                                <li class="page-item" th:each="i : ${#numbers.sequence(1, page.pages)}"
+                                    th:classappend="${i == page.pageNum ? 'active' : ''}">
+                                    <a class="page-link" th:href="@{/report(pageNum=${i}, pageSize=${page.pageSize}, keyword=${keyword}, categoryId=${categoryId}, reportType=${reportType}, status=${status})}"
+                                       th:text="${i}">1</a>
+                                </li>
+                                <li class="page-item" th:classappend="${page.pageNum >= page.pages ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/report(pageNum=${page.pageNum+1}, pageSize=${page.pageSize}, keyword=${keyword}, categoryId=${categoryId}, reportType=${reportType}, status=${status})}">
+                                        下一页
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审核模态框 -->
+    <div class="modal fade" id="auditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title text-dark" id="auditModalTitle">审核</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="auditId">
+                    <input type="hidden" id="auditAction">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary">审核备注</label>
+                        <textarea class="form-control" id="auditRemark" rows="3"
+                                  placeholder="请输入审核备注（可选）"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmAudit">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title text-dark">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p id="deleteMessage" class="text-dark mb-0"></p>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function() {
+            // 自定义样式补充
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 上报审核页面专属样式优化 */
+                h2 {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 20px;
+                    margin: 0;
+                }
+                .form-label {
+                    color: #4a5568;
+                    font-weight: 500;
+                    font-size: 14px;
+                }
+                .form-control, .form-select {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    color: #2d3748;
+                    font-size: 14px;
+                    transition: border-color 0.2s ease;
+                }
+                .form-control:focus, .form-select:focus {
+                    border-color: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.1);
+                    outline: none;
+                }
+                .form-check-input {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 4px;
+                    width: 16px;
+                    height: 16px;
+                }
+                .form-check-input:checked {
+                    background-color: #4a5568;
+                    border-color: #4a5568;
+                }
+                .btn {
+                    border-radius: 6px;
+                    font-size: 14px;
+                    padding: 8px 16px;
+                    border: none;
+                    transition: all 0.2s ease;
+                }
+                .btn-primary {
+                    background-color: #4a5568;
+                }
+                .btn-primary:hover {
+                    background-color: #2d3748;
+                }
+                .btn-secondary {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .btn-secondary:hover {
+                    background-color: #4a5568;
+                    color: #ffffff;
+                }
+                .btn-sm {
+                    padding: 4px 8px;
+                    font-size: 12px;
+                }
+                .btn-action {
+                    margin-bottom: 2px;
+                }
+                .me-1 {
+                    margin-right: 4px !important;
+                }
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    background-color: #ffffff;
+                }
+                .card-body {
+                    padding: 20px;
+                }
+                .table {
+                    color: #4a5568;
+                    font-size: 14px;
+                    margin-bottom: 0;
+                }
+                .table th {
+                    background-color: #f7fafc;
+                    border-bottom: 2px solid #e2e8f0;
+                    color: #2d3748;
+                    font-weight: 600;
+                    padding: 12px 8px;
+                }
+                .table td {
+                    border-bottom: 1px solid #f0f0f0;
+                    padding: 12px 8px;
+                    vertical-align: middle;
+                }
+                .table-hover tbody tr:hover {
+                    background-color: #f7fafc;
+                }
+                .badge {
+                    font-size: 12px;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                }
+                .badge.bg-secondary {
+                    background-color: #718096 !important;
+                }
+                .text-dark {
+                    color: #2d3748 !important;
+                }
+                .text-muted {
+                    color: #a0aec0 !important;
+                }
+                .text-secondary {
+                    color: #718096 !important;
+                }
+                .fw-medium {
+                    font-weight: 500;
+                }
+                .pagination .page-link {
+                    color: #4a5568;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    margin: 0 2px;
+                }
+                .pagination .page-item.active .page-link {
+                    background-color: #4a5568;
+                    border-color: #4a5568;
+                    color: #ffffff;
+                }
+                .pagination .page-link:hover {
+                    background-color: #f7fafc;
+                    border-color: #4a5568;
+                    color: #2d3748;
+                }
+                .modal-content {
+                    border-radius: 8px;
+                }
+                .modal-header {
+                    padding: 12px 20px;
+                }
+                .modal-body {
+                    padding: 20px;
+                }
+                .modal-footer {
+                    padding: 12px 20px;
+                }
+                .btn:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                }
+                .btn-group .btn {
+                    margin-right: 8px;
+                }
+                .btn-group .btn:last-child {
+                    margin-right: 0;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 确保 ShituAdmin 存在
+            if (typeof ShituAdmin === 'undefined') {
+                window.ShituAdmin = {
+                    toast: function(message, type) {
+                        // 创建自定义提示框
+                        const toast = document.createElement('div');
+                        toast.className = `position-fixed top-20 start-50 translate-middle-x alert alert-${
+                            type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'
+                        } alert-dismissible fade show`;
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <i class="fas fa-${
+                            type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'
+                        } me-2"></i>
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(toast);
+
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Alert(toast);
+                            bsToast.close();
+                            setTimeout(() => toast.remove(), 500);
+                        }, 3000);
+                    },
+                    confirm: function(message, callback) {
+                        if (confirm(message)) {
+                            callback();
+                        }
+                    }
+                };
+            }
+
+            // 全选/取消全选
+            $('#selectAll').change(function() {
+                $('.item-checkbox').prop('checked', $(this).prop('checked'));
+                updateBatchButtons();
+            });
+
+            $(document).on('change', '.item-checkbox', function() {
+                var allCheckboxes = $('.item-checkbox');
+                var checkedCount = $('.item-checkbox:checked').length;
+                var allChecked = checkedCount === allCheckboxes.length && allCheckboxes.length > 0;
+
+                $('#selectAll').prop('checked', allChecked);
+                updateBatchButtons();
+            });
+
+            // 更新批量按钮状态
+            function updateBatchButtons() {
+                var checkedCount = $('.item-checkbox:checked').length;
+                $('#batchApproveBtn, #batchRejectBtn, #batchDeleteBtn').prop('disabled', checkedCount === 0);
+            }
+
+            // 初始化批量按钮状态
+            updateBatchButtons();
+
+            // 单个通过
+            $('.approve-btn').click(function() {
+                var id = $(this).data('id');
+                $('#auditId').val(id);
+                $('#auditAction').val('approve');
+                $('#auditModalTitle').text('通过审核');
+                $('#auditModal').modal('show');
+            });
+
+            // 单个驳回
+            $('.reject-btn').click(function() {
+                var id = $(this).data('id');
+                $('#auditId').val(id);
+                $('#auditAction').val('reject');
+                $('#auditModalTitle').text('驳回审核');
+                $('#auditModal').modal('show');
+            });
+
+            // 确认审核（单个）
+            $('#confirmAudit').click(function() {
+                var id = $('#auditId').val();
+                var action = $('#auditAction').val();
+                var status = action === 'approve' ? 1 : 2;
+                var remark = $('#auditRemark').val().trim();
+
+                if (!id) {
+                    ShituAdmin.toast('审核ID不能为空', 'warning');
+                    return;
+                }
+
+                var $confirmBtn = $(this);
+                $confirmBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>处理中...');
+
+                $.ajax({
+                    url: '/api/report/audit/' + id,
+                    type: 'PUT',
+                    data: {
+                        status: status,
+                        remark: remark
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            ShituAdmin.toast(res.message, 'success');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            ShituAdmin.toast(res.message, 'danger');
+                        }
+                        $('#auditModal').modal('hide');
+                        $('#auditRemark').val('');
+                    },
+                    error: function(xhr) {
+                        var errorMsg = xhr.responseJSON?.message || xhr.statusText || '请求失败';
+                        ShituAdmin.toast('审核失败：' + errorMsg, 'danger');
+                        $('#auditModal').modal('hide');
+                    },
+                    complete: function() {
+                        $confirmBtn.prop('disabled', false).text('确认');
+                    }
+                });
+            });
+
+            // 批量通过
+            $('#batchApproveBtn').click(function() {
+                var ids = [];
+                $('.item-checkbox:checked').each(function() {
+                    ids.push($(this).val());
+                });
+
+                if (ids.length === 0) return;
+
+                // 弹出备注输入框
+                var remark = prompt('请输入批量通过的审核备注（可选）', '批量通过审核');
+
+                // 用户取消输入
+                if (remark === null) return;
+
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>处理中...');
+
+                $.ajax({
+                    url: '/api/report/batch/audit?status=1' + (remark ? '&remark=' + encodeURIComponent(remark) : ''),
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(ids),
+                    success: function(res) {
+                        if (res.success) {
+                            ShituAdmin.toast(res.message, 'success');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            ShituAdmin.toast(res.message, 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        var errorMsg = xhr.responseJSON?.message || xhr.statusText || '请求失败';
+                        ShituAdmin.toast('批量审核失败：' + errorMsg, 'danger');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>批量通过');
+                    }
+                });
+            });
+
+            // 批量驳回（修复重复定义问题）
+            $('#batchRejectBtn').off('click').on('click', function() {
+                var ids = [];
+                $('.item-checkbox:checked').each(function() {
+                    ids.push($(this).val());
+                });
+
+                if (ids.length === 0) return;
+
+                // 弹出备注输入框
+                var remark = prompt('请输入批量驳回的理由（必填）', '');
+
+                // 用户取消输入
+                if (remark === null) return;
+
+                // 验证备注
+                if (!remark || remark.trim() === '') {
+                    ShituAdmin.toast('驳回理由不能为空', 'warning');
+                    return;
+                }
+
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>处理中...');
+
+                $.ajax({
+                    url: '/api/report/batch/audit?status=2&remark=' + encodeURIComponent(remark.trim()),
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(ids),
+                    success: function(res) {
+                        if (res.success) {
+                            ShituAdmin.toast(res.message, 'success');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            ShituAdmin.toast(res.message, 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        var errorMsg = xhr.responseJSON?.message || xhr.statusText || '请求失败';
+                        ShituAdmin.toast('批量驳回失败：' + errorMsg, 'danger');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html('<i class="fas fa-times-circle me-2"></i>批量驳回');
+                    }
+                });
+            });
+
+            // 删除单个
+            var deleteId = null;
+            $('.delete-btn').click(function() {
+                deleteId = $(this).data('id');
+                var name = $(this).data('name');
+                $('#deleteMessage').text('确定要删除上报记录 "' + name + '" 吗？');
+                $('#deleteModal').modal('show');
+            });
+
+            $('#confirmDelete').click(function() {
+                if (deleteId) {
+                    var $btn = $(this);
+                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>删除中...');
+
+                    $.post('/report/delete/' + deleteId, function(res) {
+                        if (res.success) {
+                            ShituAdmin.toast(res.message, 'success');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            ShituAdmin.toast(res.message, 'danger');
+                        }
+                        $('#deleteModal').modal('hide');
+                        $btn.prop('disabled', false).text('确认删除');
+                    }).fail(function(xhr) {
+                        var errorMsg = xhr.responseJSON?.message || xhr.statusText || '删除失败';
+                        ShituAdmin.toast('删除失败：' + errorMsg, 'danger');
+                        $('#deleteModal').modal('hide');
+                        $btn.prop('disabled', false).text('确认删除');
+                    });
+                }
+            });
+
+            // 批量删除
+            $('#batchDeleteBtn').click(function() {
+                var ids = [];
+                $('.item-checkbox:checked').each(function() {
+                    ids.push($(this).val());
+                });
+
+                if (ids.length === 0) return;
+
+                ShituAdmin.confirm('确定要删除选中的 ' + ids.length + ' 条上报记录吗？此操作不可恢复！', function() {
+                    var $btn = $(this);
+                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>删除中...');
+
+                    $.ajax({
+                        url: '/report/batch-delete',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(ids),
+                        success: function(res) {
+                            if (res.success) {
+                                ShituAdmin.toast(res.message, 'success');
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                ShituAdmin.toast(res.message, 'danger');
+                            }
+                            $btn.prop('disabled', false).html('<i class="fas fa-trash-alt me-2"></i>批量删除');
+                        },
+                        error: function(xhr) {
+                            var errorMsg = xhr.responseJSON?.message || xhr.statusText || '批量删除失败';
+                            ShituAdmin.toast('批量删除失败：' + errorMsg, 'danger');
+                            $btn.prop('disabled', false).html('<i class="fas fa-trash-alt me-2"></i>批量删除');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

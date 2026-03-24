@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head}"></head>
+<body>
+<div th:replace="~{layout :: layout(title='编辑分类', menu='category', content=~{::content})}"></div>
+<div th:fragment="content">
+    <meta charset="UTF-8">
+    <div class="container-fluid">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-edit me-2"></i>
+                <span th:text="${category.id != null ? '编辑分类' : '新增分类'}"></span>
+            </h2>
+            <a href="/category" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>返回列表
+            </a>
+        </div>
+
+        <!-- 编辑表单 -->
+        <div class="card">
+            <div class="card-body">
+                <form action="/category/save" method="post" id="categoryForm">
+                    <input type="hidden" name="id" th:value="${category.id}">
+
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">分类名称 <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" name="name"
+                                   th:value="${category.name}" required maxlength="50">
+                        </div>
+                        <label class="col-sm-2 col-form-label">分类编码 <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" name="code"
+                                   th:value="${category.code}" required maxlength="50">
+                            <div class="form-text">唯一标识，例如：toilet</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">图标</label>
+                        <div class="col-sm-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="icon"
+                                       th:value="${category.icon}" placeholder="例如：fas fa-toilet">
+                                <span class="input-group-text bg-light border-start-0" id="iconPreview">
+                                    <i th:if="${category.icon}" th:class="${category.icon} text-secondary"></i>
+                                    <i th:unless="${category.icon}" class="fas fa-image text-muted"></i>
+                                </span>
+                            </div>
+                            <div class="form-text">Font Awesome 图标类名</div>
+                        </div>
+                        <label class="col-sm-2 col-form-label">排序</label>
+                        <div class="col-sm-4">
+                            <input type="number" class="form-control" name="sort"
+                                   th:value="${category.sort ?: 0}" min="0">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">状态</label>
+                        <div class="col-sm-10">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="status"
+                                       id="status1" value="1" th:checked="${category.status == null or category.status == 1}">
+                                <label class="form-check-label" for="status1">显示</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="status"
+                                       id="status0" value="0" th:checked="${category.status == 0}">
+                                <label class="form-check-label" for="status0">隐藏</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">描述</label>
+                        <div class="col-sm-10">
+                            <textarea class="form-control" name="description" rows="3"
+                                      th:text="${category.description}" placeholder="请输入分类描述（选填）"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-10 offset-sm-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>保存
+                            </button>
+                            <a href="/category" class="btn btn-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function() {
+            // 自定义样式补充
+            const style = document.createElement('style');
+            style.textContent = `
+                /* 分类编辑页面专属样式优化 */
+                .col-form-label {
+                    color: #4a5568;
+                    font-weight: 500;
+                    font-size: 14px;
+                    padding-top: calc(0.375rem + 1px);
+                    padding-bottom: calc(0.375rem + 1px);
+                }
+                .form-control {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    color: #2d3748;
+                    font-size: 14px;
+                    transition: border-color 0.2s ease;
+                }
+                .form-control:focus {
+                    border-color: #4a5568;
+                    box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.1);
+                    outline: none;
+                }
+                .form-text {
+                    color: #718096;
+                    font-size: 12px;
+                    margin-top: 4px;
+                }
+                .form-check-input {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 4px;
+                    width: 16px;
+                    height: 16px;
+                }
+                .form-check-input:checked {
+                    background-color: #4a5568;
+                    border-color: #4a5568;
+                }
+                .form-check-label {
+                    color: #4a5568;
+                    font-size: 14px;
+                    margin-left: 6px;
+                }
+                .btn {
+                    border-radius: 6px;
+                    font-size: 14px;
+                    padding: 8px 16px;
+                    border: none;
+                    transition: all 0.2s ease;
+                }
+                .btn-primary {
+                    background-color: #4a5568;
+                }
+                .btn-primary:hover {
+                    background-color: #2d3748;
+                }
+                .btn-secondary {
+                    background-color: #718096;
+                    color: #ffffff;
+                }
+                .btn-secondary:hover {
+                    background-color: #4a5568;
+                    color: #ffffff;
+                }
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    background-color: #ffffff;
+                }
+                .card-body {
+                    padding: 24px;
+                }
+                .input-group-text {
+                    background-color: #f7fafc;
+                    border: 1px solid #e2e8f0;
+                    color: #4a5568;
+                    padding: 8px 12px;
+                }
+                .border-start-0 {
+                    border-left: none !important;
+                }
+                h2 {
+                    color: #2d3748;
+                    font-weight: 600;
+                    font-size: 20px;
+                    margin: 0;
+                }
+                .text-danger {
+                    color: #e53e3e !important;
+                }
+                .ms-2 {
+                    margin-left: 8px !important;
+                }
+                textarea.form-control {
+                    resize: vertical;
+                    min-height: 80px;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // 确保 ShituAdmin 存在
+            if (typeof ShituAdmin === 'undefined') {
+                window.ShituAdmin = {
+                    toast: function(message, type) {
+                        // 创建自定义提示框
+                        const toast = document.createElement('div');
+                        toast.className = `position-fixed top-20 start-50 translate-middle-x alert alert-${
+                            type === 'success' ? 'success' : 'warning' ? 'warning' : 'danger'
+                        } alert-dismissible fade show`;
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <i class="fas fa-${
+                            type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'
+                        } me-2"></i>
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.body.appendChild(toast);
+
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Alert(toast);
+                            bsToast.close();
+                            setTimeout(() => toast.remove(), 500);
+                        }, 3000);
+                    }
+                };
+            }
+
+            // 表单提交验证
+            $('#categoryForm').submit(function(e) {
+                const name = $('input[name="name"]').val().trim();
+                const code = $('input[name="code"]').val().trim();
+
+                if (!name) {
+                    ShituAdmin.toast('分类名称不能为空', 'warning');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!code) {
+                    ShituAdmin.toast('分类编码不能为空', 'warning');
+                    e.preventDefault();
+                    return false;
+                }
+
+                // 编码格式验证（字母、数字、下划线）
+                const codePattern = /^[a-zA-Z0-9_]+$/;
+                if (!codePattern.test(code)) {
+                    ShituAdmin.toast('分类编码只能包含字母、数字和下划线', 'warning');
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // 图标预览实时更新
+            $('input[name="icon"]').on('input', function() {
+                var iconClass = $(this).val().trim();
+                var preview = $('#iconPreview i');
+
+                if (iconClass) {
+                    preview.attr('class', iconClass).removeClass('text-muted').addClass('text-secondary');
+                } else {
+                    preview.attr('class', 'fas fa-image text-muted').removeClass('text-secondary');
+                }
+            });
+
+            // 初始化图标预览样式
+            const initialIcon = $('input[name="icon"]').val().trim();
+            if (initialIcon) {
+                $('#iconPreview i').removeClass('text-muted').addClass('text-secondary');
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

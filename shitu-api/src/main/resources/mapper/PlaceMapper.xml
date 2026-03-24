@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.liang.shituapi.dao.PlaceMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.liang.shitucommon.entity.Place">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="category_id" property="categoryId" jdbcType="INTEGER"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="longitude" property="longitude" jdbcType="DECIMAL"/>
+        <result column="latitude" property="latitude" jdbcType="DECIMAL"/>
+        <result column="images" property="images" jdbcType="VARCHAR"/>
+        <result column="contact_phone" property="contactPhone" jdbcType="VARCHAR"/>
+        <result column="opening_hours" property="openingHours" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="tags" property="tags" jdbcType="VARCHAR"/>
+        <result column="visit_count" property="visitCount" jdbcType="INTEGER"/>
+        <result column="favorite_count" property="favoriteCount" jdbcType="INTEGER"/>
+        <result column="rating" property="rating" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_by" property="createBy" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <!-- 关联字段 -->
+        <association property="categoryName" javaType="string" column="category_id"
+                     select="com.liang.shituapi.dao.CategoryMapper.selectById" fetchType="lazy"/>
+    </resultMap>
+
+    <!-- 带分类名称的结果映射 -->
+    <resultMap id="WithCategoryResultMap" type="com.liang.shitucommon.entity.Place" extends="BaseResultMap">
+        <result column="category_name" property="categoryName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="BaseColumns">
+        p.id, p.name, p.category_id, p.address, p.longitude, p.latitude,
+        p.images, p.contact_phone, p.opening_hours, p.description, p.tags,
+        p.visit_count, p.favorite_count, p.rating, p.status,
+        p.create_by, p.create_time, p.update_time
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="WithCategoryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name
+        FROM place p
+        LEFT JOIN category c ON p.category_id = c.id
+        WHERE p.id = #{id}
+    </select>
+
+    <!-- 查询所有 -->
+    <select id="selectAll" resultMap="WithCategoryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name
+        FROM place p
+        LEFT JOIN category c ON p.category_id = c.id
+        ORDER BY p.id DESC
+    </select>
+
+    <!-- 根据分类查询 -->
+    <select id="selectByCategoryId" resultMap="WithCategoryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name
+        FROM place p
+        LEFT JOIN category c ON p.category_id = c.id
+        <where>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+        </where>
+        ORDER BY p.id DESC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectPage" resultMap="WithCategoryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name
+        FROM place p
+        LEFT JOIN category c ON p.category_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.address LIKE CONCAT('%', #{keyword}, '%')
+                OR p.tags LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+        </where>
+        ORDER BY p.id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM place p
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.address LIKE CONCAT('%', #{keyword}, '%')
+                OR p.tags LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询附近点位（使用Haversine公式计算距离） -->
+    <select id="selectNearby" resultMap="WithCategoryResultMap">
+        SELECT
+        <include refid="BaseColumns"/>,
+        c.name as category_name,
+        ROUND(6371 * 2 * ASIN(SQRT(
+        POWER(SIN((#{latitude} - ABS(p.latitude)) * PI() / 180 / 2), 2) +
+        COS(#{latitude} * PI() / 180) * COS(ABS(p.latitude) * PI() / 180) *
+        POWER(SIN((#{longitude} - p.longitude) * PI() / 180 / 2), 2)
+        )), 2) AS distance
+        FROM place p
+        LEFT JOIN category c ON p.category_id = c.id
+        <where>
+            p.longitude IS NOT NULL
+            AND p.latitude IS NOT NULL
+            AND p.status = 1
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            HAVING distance &lt;= #{distance}
+        </where>
+        ORDER BY distance ASC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO place (
+        name, category_id, address, longitude, latitude, images,
+        contact_phone, opening_hours, description, tags,
+        visit_count, favorite_count, rating, status, create_by,
+        source_type, source_id,  <!-- 新增字段 -->
+        create_time, update_time
+        ) VALUES (
+        #{name}, #{categoryId}, #{address}, #{longitude}, #{latitude}, #{images},
+        #{contactPhone}, #{openingHours}, #{description}, #{tags},
+        #{visitCount}, #{favoriteCount}, #{rating}, #{status}, #{createBy},
+        #{sourceType}, #{sourceId},  <!-- 新增字段 -->
+        NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量插入 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO place (
+        name, category_id, address, longitude, latitude, images,
+        contact_phone, opening_hours, description, tags,
+        visit_count, favorite_count, rating, status, create_by,
+        source_type, source_id, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.name}, #{item.categoryId}, #{item.address},
+            #{item.longitude}, #{item.latitude}, #{item.images},
+            #{item.contactPhone}, #{item.openingHours}, #{item.description}, #{item.tags},
+            #{item.visitCount}, #{item.favoriteCount}, #{item.rating}, #{item.status}, #{item.createBy},
+            #{item.sourceType}, #{item.sourceId}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据ID更新 -->
+    <update id="updateById">
+        UPDATE place
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="openingHours != null">opening_hours = #{openingHours},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新访问次数 -->
+    <update id="incrementVisitCount">
+        UPDATE place
+        SET visit_count = visit_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新收藏次数（增加） -->
+    <update id="incrementFavoriteCount">
+        UPDATE place
+        SET favorite_count = favorite_count + 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新收藏次数（减少） -->
+    <update id="decrementFavoriteCount">
+        UPDATE place
+        SET favorite_count = favorite_count - 1
+        WHERE id = #{id}
+          AND favorite_count > 0
+    </update>
+
+    <!-- 更新评分 -->
+    <update id="updateRating">
+        UPDATE place
+        SET rating = #{rating}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新状态 -->
+    <update id="updateStatus">
+        UPDATE place
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE place
+        SET status = #{status},
+        update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM place WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="batchDeleteByIds">
+        DELETE FROM place WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 统计各分类数量 -->
+    <select id="countByCategory" resultType="com.liang.shituapi.dao.PlaceMapper$CategoryStat">
+        SELECT
+            c.id as categoryId,
+            c.name as categoryName,
+            COUNT(p.id) as count
+        FROM category c
+                 LEFT JOIN place p ON c.id = p.category_id AND p.status = 1
+        GROUP BY c.id, c.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计热门区域（按地址前两个字分组） -->
+    <select id="countByHotArea" resultType="com.liang.shituapi.dao.PlaceMapper$HotAreaStat">
+        SELECT
+        LEFT(address, 2) as areaName,
+        COUNT(*) as count
+        FROM place
+        WHERE status = 1
+        GROUP BY LEFT(address, 2)
+        ORDER BY count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>
